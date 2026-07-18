@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -44,6 +45,7 @@ export default function StudentDirectoryPage() {
   const applicants = useSelector(selectAllApplicants);
   const jobs = useSelector(selectJobs);
   const companiesById = useSelector(selectCompaniesById);
+  const navigate = useNavigate();
   const toast = useToast();
 
   const [search, setSearch] = useState("");
@@ -52,6 +54,11 @@ export default function StudentDirectoryPage() {
   const [apiStudents, setApiStudents] = useState([]);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef(null);
+
+  // Deep-link from the job pipeline ("Profile" button) → open this student.
+  const [searchParams] = useSearchParams();
+  const deepLinkRoll = searchParams.get("roll");
+  const deepLinkHandled = useRef(null);
 
   const loadStudents = useCallback(async () => {
     if (IS_MOCK) return;
@@ -80,7 +87,7 @@ export default function StudentDirectoryPage() {
       const job = jobs.find((j) => j.id === a.jobId);
       const company = job ? (job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId)) : null;
       map.get(a.roll).applications.push({
-        id: a.id, jobRole: job?.role || "—",
+        id: a.id, jobId: a.jobId, jobRole: job?.role || "—",
         companyName: company?.name || "—", companyColor: company?.color, stage: a.currentStage,
       });
     });
@@ -124,6 +131,7 @@ export default function StudentDirectoryPage() {
         const data = await studentsApi.detail(s.id);
         const apps = (data.applications || []).map((a) => ({
           id: a.id,
+          jobId: a.jobId?._id || a.jobId?.id || a.jobId,
           jobRole: a.jobId?.role || "—",
           companyName: a.companyId?.name || "—",
           companyColor: a.companyId?.color,
@@ -135,6 +143,17 @@ export default function StudentDirectoryPage() {
       }
     }
   };
+
+  // Open the drawer automatically when arriving via ?roll= (from the pipeline).
+  // Waits for the list to load (real mode is async); the ref fires it once.
+  useEffect(() => {
+    if (!deepLinkRoll || deepLinkHandled.current === deepLinkRoll) return;
+    const match = students.find((s) => s.roll === deepLinkRoll);
+    if (match) {
+      deepLinkHandled.current = deepLinkRoll;
+      openStudent(match);
+    }
+  }, [deepLinkRoll, students]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleExport = () => {
     const rows = filtered.map((s) => ({
@@ -185,7 +204,7 @@ export default function StudentDirectoryPage() {
           <div>
             <h1 className="display-heading text-3xl text-ink flex items-center gap-3">
               <Users className="h-7 w-7 text-accent" />
-              Student Directory
+              People
             </h1>
             <p className="text-sm text-ink-2 mt-1">
               {students.length} students · {placedCount} placed · {activeBranches.length} branches
@@ -330,7 +349,14 @@ export default function StudentDirectoryPage() {
                       </p>
                     ) : (
                       selected.applications.map((app) => (
-                        <div key={app.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                        <button
+                          key={app.id}
+                          type="button"
+                          disabled={!app.jobId}
+                          onClick={() => app.jobId && navigate(`/admin/jobs/${app.jobId}/applicants`)}
+                          className="w-full flex items-center gap-3 p-3 rounded-lg border border-border text-left transition-colors enabled:hover:bg-surface-tint enabled:hover:border-border-strong disabled:cursor-default"
+                          title={app.jobId ? "Open this job's pipeline" : undefined}
+                        >
                           <div
                             className="h-8 w-8 rounded-md flex items-center justify-center text-white text-xs font-bold shrink-0"
                             style={{ background: app.companyColor || "var(--accent)" }}
@@ -342,7 +368,7 @@ export default function StudentDirectoryPage() {
                             <p className="text-xs text-ink-3">{app.companyName}</p>
                           </div>
                           <Badge tone={STAGE_TONE[app.stage]} size="sm">{stageLabel(app.stage)}</Badge>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>

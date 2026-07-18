@@ -329,6 +329,14 @@ export default function JobApplicantsPage() {
 
                     <Button
                       variant="ghost"
+                      size="sm"
+                      onClick={() => navigate(`/admin/students?roll=${encodeURIComponent(a.roll)}`)}
+                      title="View this student's full record"
+                    >
+                      Profile
+                    </Button>
+                    <Button
+                      variant="ghost"
                       size="iconSm"
                       onClick={() => handleRevoke(a)}
                       aria-label="Revoke application"

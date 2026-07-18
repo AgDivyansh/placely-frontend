@@ -28,7 +28,6 @@ const CalendarPage = lazy(() => import("@/pages/student/CalendarPage"));
 const DocumentsPage = lazy(() => import("@/pages/student/DocumentsPage"));
 const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
 const AdminJobsPage = lazy(() => import("@/pages/admin/AdminJobsPage"));
-const AdminApplicantsPage = lazy(() => import("@/pages/admin/AdminApplicantsPage"));
 const ActivityFeedPage = lazy(() => import("@/pages/admin/ActivityFeedPage"));
 const JobApplicantsPage = lazy(() => import("@/pages/admin/JobApplicantsPage"));
 const PublicProfilePage = lazy(() => import("@/pages/public/PublicProfilePage"));
@@ -80,7 +79,8 @@ export function AppRouter() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/jobs" element={<AdminJobsPage />} />
           <Route path="/admin/jobs/:id/applicants" element={<JobApplicantsPage />} />
-          <Route path="/admin/applicants" element={<AdminApplicantsPage />} />
+          {/* Merged into the People hub; keep a redirect for old links */}
+          <Route path="/admin/applicants" element={<Navigate to="/admin/students" replace />} />
           <Route path="/admin/students" element={<StudentDirectoryPage />} />
           <Route path="/admin/announcements" element={<AnnouncementsPage />} />
           <Route path="/admin/activity" element={<ActivityFeedPage />} />

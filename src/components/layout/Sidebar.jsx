@@ -27,8 +27,7 @@ const STUDENT_NAV = [
 const ADMIN_NAV = [
   { to: "/admin", icon: BarChart3, label: "Analytics" },
   { to: "/admin/jobs", icon: FileText, label: "Job Postings" },
-  { to: "/admin/applicants", icon: Users, label: "Applicants" },
-  { to: "/admin/students", icon: GraduationCap, label: "Student Directory" },
+  { to: "/admin/students", icon: Users, label: "People" },
   { to: "/admin/announcements", icon: Megaphone, label: "Announcements" },
   { to: "/admin/activity", icon: Activity, label: "Activity feed" },
 ];
