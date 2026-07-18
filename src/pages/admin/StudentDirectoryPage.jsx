@@ -151,6 +151,9 @@ export default function StudentDirectoryPage() {
               twelfthPercent: full.twelfthPercent,
               backlogs: full.backlogs,
               cgpa: full.cgpa ?? cur.cgpa,
+              graduationYear: full.graduationYear ?? cur.graduationYear,
+              currentCompany: full.currentCompany,
+              mentorVerified: full.mentorVerified,
             }
           : cur
       );
@@ -176,6 +179,21 @@ export default function StudentDirectoryPage() {
         toast.success("Marks updated", selected.name);
       } catch (err) {
         toast.error("Couldn't save", err.message || "Please try again.");
+      }
+    }
+  };
+
+  // Admin verifies/unverifies an alumnus as a paid mentor (unlocks their fee).
+  const toggleMentorVerified = async () => {
+    const next = !selected.mentorVerified;
+    setSelected((cur) => (cur ? { ...cur, mentorVerified: next } : cur));
+    if (!IS_MOCK) {
+      try {
+        await studentsApi.update(selected.id, { mentorVerified: next });
+        toast.success(next ? "Verified as mentor" : "Verification removed", selected.name);
+      } catch (err) {
+        setSelected((cur) => (cur ? { ...cur, mentorVerified: !next } : cur));
+        toast.error("Couldn't update", err.message || "Please try again.");
       }
     }
   };
@@ -436,6 +454,31 @@ export default function StudentDirectoryPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Mentor verification — only for alumni (past July 1 of grad
+                    year). Verifying unlocks their ability to charge a fee. */}
+                {selected.graduationYear &&
+                  new Date() >= new Date(selected.graduationYear, 6, 1) && (
+                    <div className="rounded-lg border border-border p-3 flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-ink text-sm">Mentor status</h3>
+                          {selected.mentorVerified && <Badge tone="success" size="sm">Verified</Badge>}
+                        </div>
+                        <p className="text-xs text-ink-3 mt-0.5">
+                          {selected.currentCompany ? `Now at ${selected.currentCompany}. ` : ""}
+                          Verified mentors may charge for guidance.
+                        </p>
+                      </div>
+                      <Button
+                        variant={selected.mentorVerified ? "secondary" : "primary"}
+                        size="sm"
+                        onClick={toggleMentorVerified}
+                      >
+                        {selected.mentorVerified ? "Unverify" : "Verify mentor"}
+                      </Button>
+                    </div>
+                  )}
 
                 {/* Applications */}
                 <div>

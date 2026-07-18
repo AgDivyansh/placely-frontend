@@ -26,7 +26,7 @@ const LINK_PLATFORMS = [
 ];
 
 export default function ProfilePage() {
-  const { user, role, updateUser } = useAuth();
+  const { user, role, persona, updateUser } = useAuth();
   const toast = useToast();
   const [editing, setEditing] = useState(null); // field name or null
   const [draftValue, setDraftValue] = useState("");
@@ -109,6 +109,34 @@ export default function ProfilePage() {
   const copyPublicLink = () => {
     navigator.clipboard?.writeText(publicUrl);
     toast.success("Link copied", publicUrl);
+  };
+
+  // Alumni mentor profile. openToMentoring lists them in the referral
+  // directory; fee/payment link only apply once an admin has verified them.
+  const [mentorDraft, setMentorDraft] = useState(null); // null = not editing
+  const startMentorEdit = () =>
+    setMentorDraft({
+      currentCompany: user.currentCompany || "",
+      mentorBio: user.mentorBio || "",
+      openToMentoring: !!user.openToMentoring,
+      mentorFee: user.mentorFee ?? "",
+      mentorPaymentLink: user.mentorPaymentLink || "",
+    });
+  const saveMentor = () => {
+    const patch = {
+      currentCompany: mentorDraft.currentCompany.trim(),
+      mentorBio: mentorDraft.mentorBio.trim(),
+      openToMentoring: mentorDraft.openToMentoring,
+    };
+    // Fee/link are only accepted by the backend for verified mentors; send
+    // them anyway (server drops them if unverified) so the UI stays simple.
+    if (user.mentorVerified) {
+      if (mentorDraft.mentorFee !== "") patch.mentorFee = Number(mentorDraft.mentorFee);
+      if (mentorDraft.mentorPaymentLink.trim()) patch.mentorPaymentLink = mentorDraft.mentorPaymentLink.trim();
+    }
+    persistProfile(patch);
+    toast.success("Mentor profile saved", "");
+    setMentorDraft(null);
   };
 
   if (!user) return null;
@@ -293,6 +321,77 @@ export default function ProfilePage() {
                 )}
               </Card.Body>
             </Card>
+
+            {/* Mentorship — only for alumni. Fee/link editable once an admin
+                has verified them. */}
+            {persona === "alumni" && (
+              <Card>
+                <Card.Header className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-ink">Mentorship</h3>
+                    {user.mentorVerified && <Badge tone="success" size="sm">Verified mentor</Badge>}
+                  </div>
+                  {mentorDraft === null ? (
+                    <Button variant="ghost" size="sm" leftIcon={Pencil} onClick={startMentorEdit}>Edit</Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" onClick={() => setMentorDraft(null)}>Cancel</Button>
+                      <Button size="sm" onClick={saveMentor}>Save</Button>
+                    </div>
+                  )}
+                </Card.Header>
+                <Card.Body className="space-y-3">
+                  {mentorDraft === null ? (
+                    <>
+                      <p className="text-sm text-ink-2">
+                        {user.openToMentoring
+                          ? "You're listed in the alumni directory — students can reach you for guidance and referrals."
+                          : "Turn on mentoring to appear in the alumni directory for students."}
+                      </p>
+                      {user.currentCompany && <p className="text-sm text-ink">Currently at <span className="font-medium">{user.currentCompany}</span></p>}
+                      {user.mentorBio && <p className="text-sm text-ink-2">{user.mentorBio}</p>}
+                      {user.mentorVerified && user.mentorFee != null && (
+                        <p className="text-sm text-ink">Fee: <span className="font-medium">₹{user.mentorFee}</span></p>
+                      )}
+                      {!user.mentorVerified && (
+                        <p className="text-xs text-ink-3">To charge for mentorship, ask the placement cell to verify you.</p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-2.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={mentorDraft.openToMentoring}
+                          onChange={(e) => setMentorDraft((d) => ({ ...d, openToMentoring: e.target.checked }))}
+                          className="h-4 w-4 rounded accent-accent"
+                        />
+                        <span className="text-sm text-ink-2">List me in the alumni directory</span>
+                      </label>
+                      <Input label="Current company" placeholder="e.g. Stripe" value={mentorDraft.currentCompany} onChange={(e) => setMentorDraft((d) => ({ ...d, currentCompany: e.target.value }))} />
+                      <label className="block">
+                        <span className="block text-xs font-medium text-ink-2 mb-1.5">Short bio</span>
+                        <textarea
+                          rows={3}
+                          value={mentorDraft.mentorBio}
+                          onChange={(e) => setMentorDraft((d) => ({ ...d, mentorBio: e.target.value }))}
+                          placeholder="How you can help students…"
+                          className="w-full px-3 py-2 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm placeholder:text-ink-3 resize-none"
+                        />
+                      </label>
+                      {user.mentorVerified ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input label="Fee (₹)" type="number" min={0} value={mentorDraft.mentorFee} onChange={(e) => setMentorDraft((d) => ({ ...d, mentorFee: e.target.value }))} />
+                          <Input label="Payment link" placeholder="https://…" value={mentorDraft.mentorPaymentLink} onChange={(e) => setMentorDraft((d) => ({ ...d, mentorPaymentLink: e.target.value }))} />
+                        </div>
+                      ) : (
+                        <p className="text-xs text-ink-3">Get verified by the placement cell to set a fee.</p>
+                      )}
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            )}
           </>
         )}
 

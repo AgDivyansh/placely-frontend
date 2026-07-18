@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import {
-  Search, Building2, GraduationCap, Phone, Video, MessageCircle, MessageSquareQuote,
+  Search, Building2, GraduationCap, Phone, Video, MessageCircle, MessageSquareQuote, ShieldCheck,
 } from "lucide-react";
 import { Card, Input, Button, Badge, Avatar, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
@@ -126,7 +126,10 @@ export default function AlumniPage() {
                     <div className="flex items-center gap-3">
                       <Avatar name={a.name} size="md" color="var(--accent)" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-ink truncate">{a.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-ink truncate">{a.name}</p>
+                          {a.mentorVerified && <ShieldCheck className="h-3.5 w-3.5 text-info shrink-0" />}
+                        </div>
                         {a.currentCompany && (
                           <p className="text-xs text-ink-2 flex items-center gap-1">
                             <Building2 className="h-3 w-3" /> {a.currentCompany}
@@ -141,8 +144,16 @@ export default function AlumniPage() {
                           <GraduationCap className="h-3 w-3" /> {a.graduationYear}
                         </span>
                       )}
+                      {a.mentorVerified && a.mentorFee != null && (
+                        <Badge tone="accent" size="sm">₹{a.mentorFee} / session</Badge>
+                      )}
                     </div>
                     {a.mentorBio && <p className="text-sm text-ink-2 line-clamp-2">{a.mentorBio}</p>}
+                    {a.mentorVerified && a.mentorFee != null && a.mentorPaymentLink && (
+                      <a href={a.mentorPaymentLink} target="_blank" rel="noopener noreferrer" className="text-xs text-accent hover:text-accent-strong">
+                        Pay ₹{a.mentorFee} to book →
+                      </a>
+                    )}
                     <Button variant="secondary" size="sm" leftIcon={MessageSquareQuote} onClick={() => openRequest(a)} className="w-full">
                       Request a connect
                     </Button>
