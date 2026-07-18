@@ -134,6 +134,7 @@ export const analyticsApi = {
 export const studentsApi = {
   list: async () => n(await api.get(E.students.list)),
   detail: async (id) => n(await api.get(E.students.detail(id))),
+  update: async (id, patch) => n(await api.patch(E.students.update(id), patch)),
   import: (rows, defaultPassword) => api.post(E.students.import, { rows, defaultPassword }),
 };
 

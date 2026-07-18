@@ -135,6 +135,24 @@ export const DEMO_ADMIN = {
   avatar: null,
 };
 
+// A graduated student — persona resolves to "alumni" via isAlumni. Used by the
+// mock login so the alumni experience is demoable without a backend.
+export const DEMO_ALUMNI = {
+  id: "u3",
+  name: "Aditya Sharma",
+  email: "alumni@placely.com",
+  phone: "+91 90000 11122",
+  role: "student",
+  branch: "CSE",
+  graduationYear: 2023,
+  isAlumni: true,
+  currentCompany: "Stripe",
+  college: "Sri Venkateswara College of Engineering",
+  city: "Bengaluru",
+  avatar: null,
+  skills: ["System Design", "DSA", "Payments"],
+};
+
 export const INITIAL_APPLICATIONS = [
   { id: "ap1", jobId: "j2", companyId: "c1", currentStage: "tech", appliedAt: "2026-05-02" },
   { id: "ap2", jobId: "j3", companyId: "c5", currentStage: "shortlist", appliedAt: "2026-05-06" },

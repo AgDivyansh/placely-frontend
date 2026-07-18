@@ -19,7 +19,7 @@
  */
 
 import {
-  JOBS, COMPANIES, ALUMNI, DEMO_STUDENT, DEMO_ADMIN,
+  JOBS, COMPANIES, ALUMNI, DEMO_STUDENT, DEMO_ADMIN, DEMO_ALUMNI,
   INITIAL_APPLICATIONS, INITIAL_NOTIFICATIONS,
 } from "@/data/mockData";
 
@@ -51,6 +51,10 @@ export async function mockRequest(method, path, opts = {}) {
         throw new Error("Admin email mismatch. Use divyansh@admin.com");
       }
       return { user: DEMO_ADMIN, role: "admin", token: "mock-jwt-admin" };
+    }
+    // Demo alumni: a graduated student whose persona resolves to "alumni".
+    if (email === DEMO_ALUMNI.email) {
+      return { user: DEMO_ALUMNI, role: "student", token: "mock-jwt-alumni" };
     }
     return { user: DEMO_STUDENT, role: "student", token: "mock-jwt-student" };
   }

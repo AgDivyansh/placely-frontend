@@ -65,7 +65,11 @@ export const useAuth = () => {
   const logout = useCallback(() => dispatch(logoutAction()), [dispatch]);
   const updateUser = useCallback((patch) => dispatch(updateUserAction(patch)), [dispatch]);
 
-  return { user, role, isAuthenticated, login, logout, updateUser };
+  // Persona is the effective experience: alumni is computed (isAlumni), not a
+  // stored role, so a graduated student gets the alumni app without a role flip.
+  const persona = role === "admin" ? "admin" : user?.isAlumni ? "alumni" : "student";
+
+  return { user, role, persona, isAuthenticated, login, logout, updateUser };
 };
 
 /* =========================

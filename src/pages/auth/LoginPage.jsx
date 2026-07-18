@@ -44,7 +44,7 @@ export default function LoginPage() {
     try {
       // We pass identifier as `email` for backwards-compat with the mock;
       // the real backend reads identifier + identifierType.
-      const { role: actualRole } = await login({
+      const { role: actualRole, user: loggedInUser } = await login({
         email: identifier,
         identifier,
         identifierType,
@@ -53,7 +53,11 @@ export default function LoginPage() {
       });
       toast.success("Welcome back", `Logged in as ${actualRole}.`);
       const from = location.state?.from?.pathname;
-      navigate(from || (actualRole === "admin" ? "/admin" : "/dashboard"), { replace: true });
+      // Land on the persona's home: admin → /admin, graduated (alumni) →
+      // /mentor, else student dashboard.
+      const home =
+        actualRole === "admin" ? "/admin" : loggedInUser?.isAlumni ? "/mentor" : "/dashboard";
+      navigate(from || home, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {

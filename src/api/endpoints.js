@@ -117,6 +117,7 @@ export const ENDPOINTS = {
   students: {
     list: "/students",
     detail: (id) => `/students/${id}`,
+    update: (id) => `/students/${id}`, // PATCH — admin edits academic record
     import: "/students/import", // POST — bulk-create from CSV rows
   },
 

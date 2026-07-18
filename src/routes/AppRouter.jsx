@@ -31,6 +31,7 @@ const AdminJobsPage = lazy(() => import("@/pages/admin/AdminJobsPage"));
 const ActivityFeedPage = lazy(() => import("@/pages/admin/ActivityFeedPage"));
 const JobApplicantsPage = lazy(() => import("@/pages/admin/JobApplicantsPage"));
 const PublicProfilePage = lazy(() => import("@/pages/public/PublicProfilePage"));
+const AlumniDashboardPage = lazy(() => import("@/pages/alumni/AlumniDashboardPage"));
 
 export function AppRouter() {
   return (
@@ -43,7 +44,24 @@ export function AppRouter() {
         {/* Public, unauthenticated shareable profile — outside the Shell */}
         <Route path="/u/:slug" element={<PublicProfilePage />} />
 
-        {/* Student routes — share the Shell layout */}
+        {/* Shared — any authenticated persona (student, alumni, admin). Keeping
+            these outside the persona groups avoids a redirect loop when a
+            persona lands here, and de-dupes profile/settings. */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Shell />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/companies/:id" element={<CompanyDetailPage />} />
+          <Route path="/announcements" element={<AnnouncementsPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Student-only routes */}
         <Route
           element={
             <ProtectedRoute allowedRole="student">
@@ -54,8 +72,6 @@ export function AppRouter() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
-          <Route path="/companies" element={<CompaniesPage />} />
-          <Route path="/companies/:id" element={<CompanyDetailPage />} />
           <Route path="/alumni" element={<AlumniPage />} />
           <Route path="/alumni/:id" element={<AlumniChatPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
@@ -63,9 +79,6 @@ export function AppRouter() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/placement-stats" element={<PlacementStatsPage />} />
           <Route path="/interview-experiences" element={<InterviewExperiencesPage />} />
-          <Route path="/announcements" element={<AnnouncementsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* Admin routes */}
@@ -82,8 +95,17 @@ export function AppRouter() {
           <Route path="/admin/students" element={<StudentDirectoryPage />} />
           <Route path="/admin/announcements" element={<AnnouncementsPage />} />
           <Route path="/admin/activity" element={<ActivityFeedPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+        </Route>
+
+        {/* Alumni-only routes */}
+        <Route
+          element={
+            <ProtectedRoute allowedRole="alumni">
+              <Shell />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/mentor" element={<AlumniDashboardPage />} />
         </Route>
 
         <Route path="/" element={<Navigate to="/login" replace />} />

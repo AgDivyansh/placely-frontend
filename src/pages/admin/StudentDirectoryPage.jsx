@@ -53,6 +53,8 @@ export default function StudentDirectoryPage() {
   const [selected, setSelected] = useState(null); // student detail drawer
   const [apiStudents, setApiStudents] = useState([]);
   const [importing, setImporting] = useState(false);
+  const [editingMarks, setEditingMarks] = useState(false);
+  const [marksDraft, setMarksDraft] = useState({ cgpa: "", tenthPercent: "", twelfthPercent: "", backlogs: "" });
   const fileRef = useRef(null);
 
   // Deep-link from the job pipeline ("Profile" button) → open this student.
@@ -123,23 +125,57 @@ export default function StudentDirectoryPage() {
   );
   const placedCount = useMemo(() => students.filter((s) => s.placed).length, [students]);
 
-  // Open the drawer; in real mode fetch the student's applications on demand.
+  // Open the drawer; in real mode fetch the student's full record + applications.
+  // The list payload omits 10th/12th/backlogs, so we pull them from detail here
+  // to seed the admin marks editor.
   const openStudent = async (s) => {
     setSelected(s);
-    if (!IS_MOCK && s.applications.length === 0 && s.applicationCount > 0) {
+    if (IS_MOCK) return;
+    try {
+      const data = await studentsApi.detail(s.id);
+      const full = data.student || {};
+      const apps = (data.applications || []).map((a) => ({
+        id: a.id,
+        jobId: a.jobId?._id || a.jobId?.id || a.jobId,
+        jobRole: a.jobId?.role || "—",
+        companyName: a.companyId?.name || "—",
+        companyColor: a.companyId?.color,
+        stage: a.currentStage,
+      }));
+      setSelected((cur) =>
+        cur && cur.id === s.id
+          ? {
+              ...cur,
+              applications: apps,
+              tenthPercent: full.tenthPercent,
+              twelfthPercent: full.twelfthPercent,
+              backlogs: full.backlogs,
+              cgpa: full.cgpa ?? cur.cgpa,
+            }
+          : cur
+      );
+    } catch {
+      /* drawer still shows profile; applications just stay empty */
+    }
+  };
+
+  // Admin edits a student's academic record (marks are admin-owned).
+  const saveMarks = async () => {
+    const patch = {
+      cgpa: Number(marksDraft.cgpa),
+      tenthPercent: Number(marksDraft.tenthPercent),
+      twelfthPercent: Number(marksDraft.twelfthPercent),
+      backlogs: Number(marksDraft.backlogs),
+    };
+    setSelected((cur) => (cur ? { ...cur, ...patch } : cur));
+    setApiStudents((list) => list.map((s) => (s.id === selected.id ? { ...s, cgpa: patch.cgpa } : s)));
+    setEditingMarks(false);
+    if (!IS_MOCK) {
       try {
-        const data = await studentsApi.detail(s.id);
-        const apps = (data.applications || []).map((a) => ({
-          id: a.id,
-          jobId: a.jobId?._id || a.jobId?.id || a.jobId,
-          jobRole: a.jobId?.role || "—",
-          companyName: a.companyId?.name || "—",
-          companyColor: a.companyId?.color,
-          stage: a.currentStage,
-        }));
-        setSelected((cur) => (cur && cur.id === s.id ? { ...cur, applications: apps } : cur));
-      } catch {
-        /* drawer still shows profile; applications just stay empty */
+        await studentsApi.update(selected.id, patch);
+        toast.success("Marks updated", selected.name);
+      } catch (err) {
+        toast.error("Couldn't save", err.message || "Please try again.");
       }
     }
   };
@@ -334,6 +370,71 @@ export default function StudentDirectoryPage() {
                       <p className="text-sm text-ink mt-1 truncate">{f.value}</p>
                     </div>
                   ))}
+                </div>
+
+                {/* Academic record — admin-owned (never self-reported). This
+                    is what eligibility is judged on. */}
+                <div className="rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-ink text-sm">Academic record</h3>
+                    {!editingMarks ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setMarksDraft({
+                            cgpa: selected.cgpa ?? "",
+                            tenthPercent: selected.tenthPercent ?? "",
+                            twelfthPercent: selected.twelfthPercent ?? "",
+                            backlogs: selected.backlogs ?? 0,
+                          });
+                          setEditingMarks(true);
+                        }}
+                      >
+                        Edit
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button variant="secondary" size="sm" onClick={() => setEditingMarks(false)}>Cancel</Button>
+                        <Button size="sm" onClick={saveMarks}>Save</Button>
+                      </div>
+                    )}
+                  </div>
+                  {editingMarks ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { key: "cgpa", label: "CGPA", max: 10, step: "0.1" },
+                        { key: "backlogs", label: "Backlogs", max: 99, step: "1" },
+                        { key: "tenthPercent", label: "10th %", max: 100, step: "1" },
+                        { key: "twelfthPercent", label: "12th %", max: 100, step: "1" },
+                      ].map((f) => (
+                        <Input
+                          key={f.key}
+                          label={f.label}
+                          type="number"
+                          min={0}
+                          max={f.max}
+                          step={f.step}
+                          value={marksDraft[f.key]}
+                          onChange={(e) => setMarksDraft((d) => ({ ...d, [f.key]: e.target.value }))}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                      {[
+                        { label: "CGPA", value: selected.cgpa ?? "—" },
+                        { label: "10th %", value: selected.tenthPercent != null ? `${selected.tenthPercent}%` : "—" },
+                        { label: "12th %", value: selected.twelfthPercent != null ? `${selected.twelfthPercent}%` : "—" },
+                        { label: "Backlogs", value: selected.backlogs ?? "—" },
+                      ].map((f) => (
+                        <div key={f.label} className="p-2 rounded-lg bg-surface-tint/50">
+                          <p className="text-[10px] uppercase tracking-widest text-ink-3 font-semibold">{f.label}</p>
+                          <p className="text-sm text-ink mt-0.5 num">{f.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Applications */}

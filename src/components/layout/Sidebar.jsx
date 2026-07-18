@@ -32,10 +32,20 @@ const ADMIN_NAV = [
   { to: "/admin/activity", icon: Activity, label: "Activity feed" },
 ];
 
+// Alumni help students rather than seek jobs — no Jobs/Saved/Calendar.
+// Mentor Requests + People directory join in later phases (no dead links now).
+const ALUMNI_NAV = [
+  { to: "/mentor", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/companies", icon: Building2, label: "Companies" },
+  { to: "/announcements", icon: Megaphone, label: "Announcements" },
+  { to: "/profile", icon: User, label: "Profile" },
+  { to: "/settings", icon: Settings, label: "Settings" },
+];
+
 export function Sidebar({ open, onClose }) {
-  const { user, role, logout } = useAuth();
+  const { user, persona, logout } = useAuth();
   const navigate = useNavigate();
-  const nav = role === "admin" ? ADMIN_NAV : STUDENT_NAV;
+  const nav = persona === "admin" ? ADMIN_NAV : persona === "alumni" ? ALUMNI_NAV : STUDENT_NAV;
 
   const handleLogout = () => {
     logout();
@@ -112,7 +122,7 @@ export function Sidebar({ open, onClose }) {
             <Avatar name={user?.name} color="var(--accent)" size="sm" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-ink truncate">{user?.name}</p>
-              <p className="text-xs text-ink-3 truncate">{role === "admin" ? "Admin" : "Student"}</p>
+              <p className="text-xs text-ink-3 truncate">{persona === "admin" ? "Admin" : persona === "alumni" ? "Alumni" : "Student"}</p>
             </div>
             <User className="h-4 w-4 text-ink-3" />
           </button>
