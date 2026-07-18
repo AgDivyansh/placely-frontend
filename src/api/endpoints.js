@@ -71,6 +71,7 @@ export const ENDPOINTS = {
     mine: "/connect/mine", // GET (student's outgoing)
     inbox: "/connect/inbox", // GET (alumnus)
     respond: (id) => `/connect/${id}`, // PATCH (alumnus accept/decline/complete)
+    directory: "/connect/directory", // GET ?company= (alumni open to mentoring)
   },
 
   // ---- Documents (student vault) ----

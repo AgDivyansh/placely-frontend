@@ -95,6 +95,7 @@ export const connectApi = {
   mine: async () => n(await api.get(E.connect.mine)),
   inbox: async () => n(await api.get(E.connect.inbox)),
   respond: async (id, patch) => n(await api.patch(E.connect.respond(id), patch)),
+  directory: async (company) => n(await api.get(E.connect.directory, company ? { company } : undefined)),
 };
 
 export const documentsApi = {
