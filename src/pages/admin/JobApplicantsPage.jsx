@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Search, Download, Mail, UserX, X, MoreVertical,
+  ArrowLeft, Search, Download, Upload, Mail, UserX, X, MoreVertical,
   ChevronRight, ShieldCheck,
 } from "lucide-react";
 import { Card, Button, Input, Chip, Badge, Avatar } from "@/components/ui";
@@ -16,7 +16,7 @@ import {
   selectApplicantsByJob, fetchApplicantsByJob,
   revokeApplicant, bulkRevokeApplicants, bulkAdvanceApplicants,
 } from "@/store/slices/applicantsSlice";
-import { IS_MOCK } from "@/api";
+import { IS_MOCK, applicantsApi } from "@/api";
 import { selectJobs } from "@/store/slices/jobsSlice";
 import { logActivity } from "@/store/slices/activityFeedSlice";
 import { useAuth } from "@/store/hooks";
@@ -24,7 +24,7 @@ import { useToast } from "@/context/ToastContext";
 import { useTwoStep } from "@/context/TwoStepContext";
 import { COMPANIES } from "@/data/mockData";
 import { STAGES } from "@/lib/constants";
-import { toCSV, downloadCSV } from "@/lib/csv";
+import { toCSV, downloadCSV, parseCSV } from "@/lib/csv";
 import { cn, formatLPA, formatDate } from "@/lib/utils";
 
 const STAGE_TONE = {
@@ -55,6 +55,44 @@ export default function JobApplicantsPage() {
   const [stageFilter, setStageFilter] = useState(null);
   const [selected, setSelected] = useState([]);
   const [showEmail, setShowEmail] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const statusFileRef = useRef(null);
+
+  // Bulk stage update from a CSV of rollId,stage rows for THIS job.
+  const handleStatusImport = async (file) => {
+    if (!file) return;
+    if (IS_MOCK) {
+      toast.info("Demo mode", "Connect the backend to import statuses for real.");
+      return;
+    }
+    setImporting(true);
+    try {
+      const rows = parseCSV(await file.text())
+        .map((r) => {
+          const lower = {};
+          for (const [k, v] of Object.entries(r)) lower[k.trim().toLowerCase()] = v;
+          return {
+            rollId: lower.rollid || lower.roll || lower["roll number"] || lower.collegerollid || "",
+            stage: (lower.stage || "").toLowerCase(),
+          };
+        })
+        .filter((r) => r.rollId && r.stage);
+      if (rows.length === 0) {
+        toast.error("Empty file", "Include a header row: rollId,stage");
+        return;
+      }
+      const res = await applicantsApi.importStatus(id, rows);
+      const { updated = 0, failed = [] } = res;
+      if (failed.length === 0) toast.success("Statuses updated", `${updated} applicant${updated === 1 ? "" : "s"} moved`);
+      else toast.warning("Import finished with issues", `${updated} updated, ${failed.length} skipped (${failed[0]?.reason || "error"})`);
+      dispatch(fetchApplicantsByJob(id));
+    } catch (err) {
+      toast.error("Import failed", err.message || "Check the CSV format and try again.");
+    } finally {
+      setImporting(false);
+      if (statusFileRef.current) statusFileRef.current.value = "";
+    }
+  };
 
   const filtered = useMemo(() => {
     let list = applicants;
@@ -191,6 +229,16 @@ export default function JobApplicantsPage() {
               </div>
               <Button variant="secondary" leftIcon={Mail} onClick={() => setShowEmail(true)}>
                 Email applicants
+              </Button>
+              <input
+                ref={statusFileRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => handleStatusImport(e.target.files?.[0])}
+                className="hidden"
+              />
+              <Button variant="secondary" leftIcon={Upload} loading={importing} onClick={() => statusFileRef.current?.click()} title="CSV columns: rollId, stage">
+                Import statuses
               </Button>
               <Button variant="secondary" leftIcon={Download} onClick={handleExport}>
                 Export CSV
