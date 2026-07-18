@@ -7,6 +7,7 @@ import { fetchApplications } from "@/store/slices/applicationsSlice";
 import { fetchBookmarks } from "@/store/slices/bookmarksSlice";
 import { fetchNotifications } from "@/store/slices/notificationsSlice";
 import { fetchCompanies } from "@/store/slices/companiesSlice";
+import { fetchDocuments } from "@/store/slices/documentsSlice";
 
 /**
  * DataBootstrap — loads the core data sets from the backend once the user
@@ -36,6 +37,7 @@ export function DataBootstrap() {
     if (role === "student") {
       dispatch(fetchApplications());
       dispatch(fetchBookmarks());
+      dispatch(fetchDocuments());
     }
 
     // Notifications for everyone.

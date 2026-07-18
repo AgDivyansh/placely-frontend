@@ -42,7 +42,7 @@ const persistConfig = {
   key: "placely:root",
   storage,
   version: 1,
-  whitelist: ["theme", "auth", "applications", "bookmarks", "settings", "documents"],
+  whitelist: ["theme", "auth", "applications", "bookmarks", "settings"],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
