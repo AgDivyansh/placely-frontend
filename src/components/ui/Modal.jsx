@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,10 @@ export function Modal({ open, onClose, title, description, size = "md", children
     };
   }, [open, onClose]);
 
-  return (
+  // Portal to <body> so the modal escapes any transformed ancestor (e.g. the
+  // JobCard's hover transform), which would otherwise become the containing
+  // block for position:fixed and clip the modal inside the card.
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
@@ -74,6 +78,7 @@ export function Modal({ open, onClose, title, description, size = "md", children
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
