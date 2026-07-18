@@ -22,12 +22,15 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const toast = useToast();
 
+  const gradYears = Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 1 + i);
+
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     collegeId: "",
     branch: "CSE",
+    graduationYear: String(new Date().getFullYear() + 4),
     password: "",
     confirm: "",
   });
@@ -75,6 +78,7 @@ export default function SignupPage() {
         phone: form.phone,
         collegeId: form.collegeId,
         branch: form.branch,
+        graduationYear: Number(form.graduationYear),
         password: form.password,
       }));
       if (signup.rejected.match(result)) {
@@ -134,22 +138,41 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Branch select */}
-            <label className="block">
-              <span className="block text-xs font-medium text-ink-2 mb-1.5">Branch</span>
-              <div className="relative">
-                <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-3 pointer-events-none" />
-                <select
-                  value={form.branch}
-                  onChange={set("branch")}
-                  className="w-full h-10 pl-10 pr-3 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm text-ink appearance-none"
-                >
-                  {BRANCHES.map((b) => (
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </select>
-              </div>
-            </label>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Branch select */}
+              <label className="block">
+                <span className="block text-xs font-medium text-ink-2 mb-1.5">Branch</span>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-3 pointer-events-none" />
+                  <select
+                    value={form.branch}
+                    onChange={set("branch")}
+                    className="w-full h-10 pl-10 pr-3 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm text-ink appearance-none"
+                  >
+                    {BRANCHES.map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+
+              {/* Graduation year — determines when the account becomes alumni */}
+              <label className="block">
+                <span className="block text-xs font-medium text-ink-2 mb-1.5">Graduation year</span>
+                <div className="relative">
+                  <GraduationCap className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-3 pointer-events-none" />
+                  <select
+                    value={form.graduationYear}
+                    onChange={set("graduationYear")}
+                    className="w-full h-10 pl-10 pr-3 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm text-ink appearance-none"
+                  >
+                    {gradYears.map((y) => (
+                      <option key={y} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </div>
+              </label>
+            </div>
 
             <div>
               <Input

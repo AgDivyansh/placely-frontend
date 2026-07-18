@@ -14,10 +14,11 @@ import { PageTransition } from "@/components/feedback/PageTransition";
 export function AuthShell({ children }) {
   return (
     <PageTransition className="min-h-screen flex">
-      {/* Left: branded panel */}
-      <div className="hidden lg:flex w-1/2 bg-ink relative overflow-hidden">
+      {/* Left: branded panel — intentionally dark in BOTH themes, so it uses
+          fixed colors rather than theme tokens (which would invert it). */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden" style={{ backgroundColor: "#0B0D17" }}>
         <div
-          className="absolute inset-0 opacity-50"
+          className="absolute inset-0 opacity-60"
           style={{
             background:
               "radial-gradient(circle at 30% 80%, var(--accent) 0%, transparent 50%), radial-gradient(circle at 80% 20%, #2C5BB8 0%, transparent 50%)",
@@ -31,15 +32,15 @@ export function AuthShell({ children }) {
           }}
         />
 
-        <div className="relative z-10 p-12 flex flex-col w-full">
-          <Logo size="lg" />
+        <div className="relative z-10 p-12 flex flex-col w-full" style={{ color: "#F5F1E8" }}>
+          <Logo size="lg" onDark />
 
           <div className="flex-1 flex flex-col justify-center max-w-md">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
-              className="display-heading text-5xl text-bg leading-[1.05]"
+              className="display-heading text-5xl leading-[1.05]"
             >
               Placement,<br />
               <em className="text-accent not-italic font-display italic">reimagined.</em>
@@ -48,7 +49,7 @@ export function AuthShell({ children }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="mt-6 text-lg text-bg/70 leading-relaxed"
+              className="mt-6 text-lg leading-relaxed opacity-80"
             >
               One unified workspace for jobs, applications, and verified alumni mentorship.
               No more lost emails, no more Excel sheets.
@@ -66,19 +67,19 @@ export function AuthShell({ children }) {
                 { icon: TrendingUp, label: "Analytics", desc: "Live placement insights for TPOs" },
               ].map((f) => (
                 <div key={f.label} className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-lg glass border border-bg/10 flex items-center justify-center shrink-0">
+                  <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: "rgba(245,241,232,0.08)", border: "1px solid rgba(245,241,232,0.14)" }}>
                     <f.icon className="h-4 w-4 text-accent" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-bg">{f.label}</p>
-                    <p className="text-xs text-bg/60">{f.desc}</p>
+                    <p className="text-sm font-semibold">{f.label}</p>
+                    <p className="text-xs opacity-70">{f.desc}</p>
                   </div>
                 </div>
               ))}
             </motion.div>
           </div>
 
-          <div className="text-xs text-bg/40">© 2026 Placely · Bengaluru, India</div>
+          <div className="text-xs opacity-50">© 2026 Placely · Bengaluru, India</div>
         </div>
       </div>
 
