@@ -1,27 +1,29 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Phone, Video, ShieldCheck, Clock, Check,
+  ArrowLeft, Send, Phone, Video, MessageCircle, ShieldCheck, Clock, Check,
 } from "lucide-react";
-import { Card, Button, Avatar, Badge, Modal } from "@/components/ui";
+import { Card, Button, Avatar, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import { useToast } from "@/context/ToastContext";
+import { createConnect } from "@/store/slices/connectSlice";
 import { ALUMNI, COMPANIES } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
 const QUICK_REPLIES = ["Hi! Can we talk about your role?", "Any tips for the interview?", "Referral help?"];
-const SLOTS = ["Today 6:00 PM", "Today 8:30 PM", "Tomorrow 10:00 AM", "Tomorrow 4:00 PM"];
+const MODES = [
+  { key: "video", label: "Video call", icon: Video },
+  { key: "audio", label: "Audio call", icon: Phone },
+  { key: "chat", label: "Chat / async", icon: MessageCircle },
+];
 
 export default function AlumniChatPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Origin-aware back navigation:
-  //  - From JobDetail: state.from = "/jobs/:id", label = "Back to job"
-  //  - From CompanyDetail: state.from = "/companies/:id", label = "Back to company"
-  //  - Direct from /alumni: no state, label = "Back to alumni", goes to /alumni
+  const dispatch = useDispatch();
   const backTo = location.state?.from || "/alumni";
   const backLabel = location.state?.fromLabel || "Back to alumni";
   const toast = useToast();
@@ -30,13 +32,18 @@ export default function AlumniChatPage() {
   const company = COMPANIES.find((c) => c.id === alumni?.companyId);
 
   const [messages, setMessages] = useState([
-    { id: 1, mine: false, body: `Hi! I'm ${alumni?.name.split(" ")[0]}. Happy to help — what's on your mind?`, time: "10:24 AM" },
+    { id: 1, mine: false, body: `Hi! I'm ${alumni?.name?.split(" ")[0]}. Happy to help — what's on your mind?`, time: "10:24 AM" },
   ]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [showCallModal, setShowCallModal] = useState(false);
-  const [callState, setCallState] = useState("idle"); // idle | pending | approved
-  const [selectedSlot, setSelectedSlot] = useState(null);
+
+  // Real connect request
+  const [showReqModal, setShowReqModal] = useState(false);
+  const [reqMode, setReqMode] = useState("video");
+  const [reqTopic, setReqTopic] = useState("");
+  const [reqNote, setReqNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
   const scrollRef = useRef(null);
 
   useEffect(() => {
@@ -53,26 +60,31 @@ export default function AlumniChatPage() {
 
   const send = (text) => {
     if (!text.trim()) return;
-    const mine = { id: Date.now(), mine: true, body: text, time: now() };
-    setMessages((m) => [...m, mine]);
+    setMessages((m) => [...m, { id: Date.now(), mine: true, body: text, time: now() }]);
     setInput("");
     setTyping(true);
     setTimeout(() => {
-      const reply = pickReply(text);
-      setMessages((m) => [...m, { id: Date.now() + 1, mine: false, body: reply, time: now() }]);
+      setMessages((m) => [...m, { id: Date.now() + 1, mine: false, body: pickReply(text), time: now() }]);
       setTyping(false);
     }, 1400);
   };
 
-  const requestCall = () => {
-    if (!selectedSlot) return;
-    setShowCallModal(false);
-    setCallState("pending");
-    toast.info("Call request sent", `${alumni.name} will be notified`);
-    setTimeout(() => {
-      setCallState("approved");
-      toast.success("Call approved!", `${selectedSlot} confirmed`);
-    }, 2200);
+  const sendRequest = async () => {
+    if (!reqTopic.trim()) {
+      toast.error("Add a topic", "Tell them briefly what you need help with.");
+      return;
+    }
+    setSending(true);
+    try {
+      await dispatch(createConnect({ alumniId: id, mode: reqMode, topic: reqTopic, note: reqNote })).unwrap();
+      setRequestSent(true);
+      setShowReqModal(false);
+      toast.success("Request sent", `${alumni.name} will be notified and can accept from their inbox.`);
+    } catch (err) {
+      toast.error("Couldn't send request", err.message || "Please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -99,44 +111,23 @@ export default function AlumniChatPage() {
               </div>
               <p className="text-xs text-ink-2">{alumni.role} · {company?.name}</p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={callState !== "approved"}
-              onClick={() => setShowCallModal(true)}
-              aria-label="Voice call"
-            >
-              <Phone className={cn("h-4 w-4", callState === "approved" ? "text-success" : "text-ink-3")} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={callState !== "approved"}
-              aria-label="Video call"
-            >
-              <Video className={cn("h-4 w-4", callState === "approved" ? "text-success" : "text-ink-3")} />
+            <Button variant="secondary" size="sm" leftIcon={Phone} onClick={() => setShowReqModal(true)}>
+              Request a connect
             </Button>
           </div>
 
           {/* Status banner */}
-          {callState === "pending" && (
-            <div className="px-4 py-2 bg-warning/8 border-b border-warning/20 flex items-center gap-2">
-              <Clock className="h-3.5 w-3.5 text-warning" />
-              <p className="text-xs text-ink-2">Call request pending — {alumni.name} is reviewing your slot</p>
-            </div>
-          )}
-          {callState === "approved" && (
+          {requestSent && (
             <div className="px-4 py-2 bg-success/8 border-b border-success/20 flex items-center gap-2">
-              <Check className="h-3.5 w-3.5 text-success" />
-              <p className="text-xs text-ink-2">Call confirmed for {selectedSlot}</p>
+              <Clock className="h-3.5 w-3.5 text-success" />
+              <p className="text-xs text-ink-2">
+                Connect request sent — {alumni.name} will accept and share a meeting link.
+              </p>
             </div>
           )}
 
-          {/* Messages */}
-          <div
-            ref={scrollRef}
-            className="h-[420px] overflow-y-auto p-4 space-y-3 bg-surface-tint/30"
-          >
+          {/* Messages (demo chat) */}
+          <div ref={scrollRef} className="h-[380px] overflow-y-auto p-4 space-y-3 bg-surface-tint/30">
             <AnimatePresence initial={false}>
               {messages.map((m) => (
                 <motion.div
@@ -160,13 +151,8 @@ export default function AlumniChatPage() {
                 </motion.div>
               ))}
             </AnimatePresence>
-
             {typing && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex justify-start"
-              >
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                 <div className="bg-surface border border-border px-3.5 py-3 rounded-2xl rounded-bl-md flex gap-1">
                   {[0, 0.15, 0.3].map((d) => (
                     <motion.span
@@ -206,11 +192,6 @@ export default function AlumniChatPage() {
               placeholder="Type your message…"
               className="flex-1 h-10 px-3 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm placeholder:text-ink-3"
             />
-            {callState === "idle" && (
-              <Button variant="secondary" size="md" leftIcon={Phone} onClick={() => setShowCallModal(true)}>
-                Request call
-              </Button>
-            )}
             <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} aria-label="Send">
               <Send className="h-4 w-4" />
             </Button>
@@ -218,36 +199,60 @@ export default function AlumniChatPage() {
         </Card>
 
         <Modal
-          open={showCallModal}
-          onClose={() => setShowCallModal(false)}
-          title="Request a call"
-          description={`Pick a slot that works for both of you. ${alumni.name} will confirm.`}
+          open={showReqModal}
+          onClose={() => setShowReqModal(false)}
+          title="Request a connect"
+          description={`Ask ${alumni.name} for help. They'll accept and share a meeting link.`}
           footer={
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setShowCallModal(false)}>Cancel</Button>
-              <Button onClick={requestCall} disabled={!selectedSlot}>Send request</Button>
+              <Button variant="secondary" onClick={() => setShowReqModal(false)}>Cancel</Button>
+              <Button onClick={sendRequest} loading={sending} disabled={!reqTopic.trim()}>Send request</Button>
             </div>
           }
         >
-          <div className="space-y-2">
-            {SLOTS.map((s) => (
-              <button
-                key={s}
-                onClick={() => setSelectedSlot(s)}
-                className={cn(
-                  "w-full text-left p-3 rounded-lg border transition-colors",
-                  selectedSlot === s
-                    ? "bg-accent-soft border-accent text-accent-strong"
-                    : "border-border hover:bg-surface-tint"
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-ink">{s}</span>
-                  {selectedSlot === s && <Check className="h-4 w-4 text-accent" />}
-                </div>
-                <p className="text-xs text-ink-3 mt-0.5">30 minutes · Audio call</p>
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <span className="block text-xs font-medium text-ink-2 mb-2">How would you like to connect?</span>
+              <div className="grid grid-cols-3 gap-2">
+                {MODES.map((m) => (
+                  <button
+                    key={m.key}
+                    type="button"
+                    onClick={() => setReqMode(m.key)}
+                    className={cn(
+                      "flex flex-col items-center gap-1.5 py-3 rounded-lg border text-xs font-medium transition-all",
+                      reqMode === m.key
+                        ? "border-accent bg-accent/5 text-accent"
+                        : "border-border text-ink-3 hover:border-border-strong hover:text-ink-2"
+                    )}
+                  >
+                    <m.icon className="h-4 w-4" />
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <label className="block">
+              <span className="block text-xs font-medium text-ink-2 mb-1.5">Topic <span className="text-danger">*</span></span>
+              <input
+                type="text"
+                value={reqTopic}
+                onChange={(e) => setReqTopic(e.target.value)}
+                placeholder="e.g. System design interview prep"
+                className="w-full h-10 px-3 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm placeholder:text-ink-3"
+                autoFocus
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs font-medium text-ink-2 mb-1.5">Note (optional)</span>
+              <textarea
+                rows={3}
+                value={reqNote}
+                onChange={(e) => setReqNote(e.target.value)}
+                placeholder="Anything specific you'd like them to prepare for?"
+                className="w-full px-3 py-2 rounded-lg bg-surface border border-border focus:border-accent focus:outline-none text-sm placeholder:text-ink-3 resize-none"
+              />
+            </label>
           </div>
         </Modal>
       </div>

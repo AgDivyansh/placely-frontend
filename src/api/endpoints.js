@@ -65,6 +65,14 @@ export const ENDPOINTS = {
     requestCall: (id) => `/alumni/${id}/call-request`, // POST
   },
 
+  // ---- Connect (student ↔ alumnus mentor requests) ----
+  connect: {
+    create: "/connect", // POST (student)
+    mine: "/connect/mine", // GET (student's outgoing)
+    inbox: "/connect/inbox", // GET (alumnus)
+    respond: (id) => `/connect/${id}`, // PATCH (alumnus accept/decline/complete)
+  },
+
   // ---- Documents (student vault) ----
   documents: {
     list: "/documents",

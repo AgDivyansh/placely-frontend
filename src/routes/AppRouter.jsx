@@ -32,6 +32,7 @@ const ActivityFeedPage = lazy(() => import("@/pages/admin/ActivityFeedPage"));
 const JobApplicantsPage = lazy(() => import("@/pages/admin/JobApplicantsPage"));
 const PublicProfilePage = lazy(() => import("@/pages/public/PublicProfilePage"));
 const AlumniDashboardPage = lazy(() => import("@/pages/alumni/AlumniDashboardPage"));
+const MentorRequestsPage = lazy(() => import("@/pages/alumni/MentorRequestsPage"));
 
 export function AppRouter() {
   return (
@@ -106,6 +107,7 @@ export function AppRouter() {
           }
         >
           <Route path="/mentor" element={<AlumniDashboardPage />} />
+          <Route path="/mentor/requests" element={<MentorRequestsPage />} />
         </Route>
 
         <Route path="/" element={<Navigate to="/login" replace />} />

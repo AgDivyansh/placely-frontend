@@ -33,6 +33,18 @@ const db = {
   alumni: [...ALUMNI],
   applications: [...INITIAL_APPLICATIONS],
   notifications: [...INITIAL_NOTIFICATIONS],
+  // Connect (mentor) requests. One seeded so the alumni inbox demo isn't empty.
+  connect: [
+    {
+      id: "cn1",
+      mode: "video",
+      topic: "System design interview prep",
+      note: "Interviewing at a fintech next week — would love a mock round.",
+      status: "pending",
+      student: { name: "Riya Sharma", branch: "CSE", collegeRollId: "21CS1101" },
+      createdAt: new Date().toISOString(),
+    },
+  ],
 };
 
 /**
@@ -168,6 +180,30 @@ export async function mockRequest(method, path, opts = {}) {
         projects: s.projects,
       },
     };
+  }
+
+  // ---- CONNECT (mentor requests) ----
+  if (path === "/connect" && method === "POST") {
+    const request = {
+      id: `cn${Date.now()}`,
+      ...opts.body,
+      status: "pending",
+      student: { name: DEMO_STUDENT.name, branch: DEMO_STUDENT.branch },
+      createdAt: new Date().toISOString(),
+    };
+    db.connect.unshift(request);
+    return { request };
+  }
+  if (path === "/connect/mine" && method === "GET") return { requests: db.connect };
+  if (path === "/connect/inbox" && method === "GET") return { requests: db.connect };
+  const connectRespondMatch = path.match(/^\/connect\/([^/]+)$/);
+  if (connectRespondMatch && method === "PATCH") {
+    const r = db.connect.find((x) => x.id === connectRespondMatch[1]);
+    if (r) {
+      r.status = opts.body?.status || r.status;
+      if (opts.body?.meetingLink) r.meetingLink = opts.body.meetingLink;
+    }
+    return { request: r };
   }
 
   // ---- ANALYTICS (static demo payload) ----

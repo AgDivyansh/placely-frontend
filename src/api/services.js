@@ -90,6 +90,13 @@ export const alumniApi = {
   requestCall: (id, slot) => api.post(E.alumni.requestCall(id), { slot }),
 };
 
+export const connectApi = {
+  create: async (payload) => n(await api.post(E.connect.create, payload)),
+  mine: async () => n(await api.get(E.connect.mine)),
+  inbox: async () => n(await api.get(E.connect.inbox)),
+  respond: async (id, patch) => n(await api.patch(E.connect.respond(id), patch)),
+};
+
 export const documentsApi = {
   list: async () => n(await api.get(E.documents.list)),
   upload: (formData) => api.post(E.documents.upload, formData, { isMultipart: true }),

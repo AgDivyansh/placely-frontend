@@ -36,6 +36,7 @@ const ADMIN_NAV = [
 // Mentor Requests + People directory join in later phases (no dead links now).
 const ALUMNI_NAV = [
   { to: "/mentor", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/mentor/requests", icon: MessageSquareQuote, label: "Mentor requests" },
   { to: "/companies", icon: Building2, label: "Companies" },
   { to: "/announcements", icon: Megaphone, label: "Announcements" },
   { to: "/profile", icon: User, label: "Profile" },
