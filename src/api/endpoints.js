@@ -128,6 +128,7 @@ export const ENDPOINTS = {
     detail: (id) => `/students/${id}`,
     update: (id) => `/students/${id}`, // PATCH — admin edits academic record
     import: "/students/import", // POST — bulk-create from CSV rows
+    importDocuments: "/students/documents/import", // POST — bulk doc metadata
   },
 
   // ---- Announcements (shared read, admin write) ----

@@ -4,7 +4,7 @@ import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Users, Search, Download, Upload, X, Mail, Phone, GraduationCap,
-  Award, Briefcase,
+  Award, Briefcase, FileText,
 } from "lucide-react";
 import { Card, Input, Chip, Badge, Avatar, Button } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
@@ -56,6 +56,7 @@ export default function StudentDirectoryPage() {
   const [editingMarks, setEditingMarks] = useState(false);
   const [marksDraft, setMarksDraft] = useState({ cgpa: "", tenthPercent: "", twelfthPercent: "", backlogs: "" });
   const fileRef = useRef(null);
+  const docFileRef = useRef(null);
 
   // Deep-link from the job pipeline ("Profile" button) → open this student.
   const [searchParams] = useSearchParams();
@@ -251,6 +252,45 @@ export default function StudentDirectoryPage() {
     }
   };
 
+  // Admin bulk-imports student documents (metadata) from a CSV.
+  const handleImportDocuments = async (file) => {
+    if (!file) return;
+    if (IS_MOCK) {
+      toast.info("Demo mode", "Connect the backend to import documents for real.");
+      return;
+    }
+    setImporting(true);
+    try {
+      const rows = parseCSV(await file.text()).map((r) => {
+        const low = {};
+        for (const [k, v] of Object.entries(r)) low[k.trim().toLowerCase()] = v;
+        return {
+          rollId: low.rollid || low.roll || low.collegerollid || undefined,
+          email: low.email || undefined,
+          type: low.type || low.documenttype,
+          name: low.name || low.documentname || undefined,
+          filename: low.filename || undefined,
+          size: low.size || undefined,
+          status: low.status || undefined,
+          required: low.required,
+        };
+      }).filter((r) => r.type && (r.rollId || r.email));
+      if (rows.length === 0) {
+        toast.error("Empty or invalid file", "Header row: rollId,type,name,filename,size,status,required");
+        return;
+      }
+      const res = await studentsApi.importDocuments(rows);
+      const { imported = 0, failed = [] } = res;
+      if (failed.length === 0) toast.success("Documents imported", `${imported} record${imported === 1 ? "" : "s"} added`);
+      else toast.warning("Import finished with issues", `${imported} imported, ${failed.length} skipped (${failed[0]?.reason || "error"})`);
+    } catch (err) {
+      toast.error("Import failed", err.message || "Check the CSV format and try again.");
+    } finally {
+      setImporting(false);
+      if (docFileRef.current) docFileRef.current.value = "";
+    }
+  };
+
   return (
     <PageTransition>
       <div className="space-y-6">
@@ -272,8 +312,18 @@ export default function StudentDirectoryPage() {
               onChange={(e) => handleImport(e.target.files?.[0])}
               className="hidden"
             />
+            <input
+              ref={docFileRef}
+              type="file"
+              accept=".csv"
+              onChange={(e) => handleImportDocuments(e.target.files?.[0])}
+              className="hidden"
+            />
             <Button variant="secondary" leftIcon={Upload} loading={importing} onClick={() => fileRef.current?.click()}>
-              Import CSV
+              Import students
+            </Button>
+            <Button variant="secondary" leftIcon={FileText} loading={importing} onClick={() => docFileRef.current?.click()}>
+              Import documents
             </Button>
             <Button variant="secondary" leftIcon={Download} onClick={handleExport}>
               Export CSV

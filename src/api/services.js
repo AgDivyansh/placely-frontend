@@ -144,12 +144,13 @@ export const studentsApi = {
   detail: async (id) => n(await api.get(E.students.detail(id))),
   update: async (id, patch) => n(await api.patch(E.students.update(id), patch)),
   import: (rows, defaultPassword) => api.post(E.students.import, { rows, defaultPassword }),
+  importDocuments: (rows) => api.post(E.students.importDocuments, { rows }),
 };
 
 export const announcementsApi = {
   list: async () => n(await api.get(E.announcements.list)),
   create: async (payload) => n(await api.post(E.announcements.create, payload)),
-  togglePin: (id) => api.patch(E.announcements.pin(id)),
+  togglePin: async (id) => n(await api.patch(E.announcements.pin(id))),
   remove: (id) => api.delete(E.announcements.remove(id)),
 };
 

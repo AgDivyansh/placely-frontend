@@ -49,9 +49,18 @@ export const removeAnnouncementThunk = createAsyncThunk(
 
 export const togglePinThunk = createAsyncThunk(
   "announcements/togglePin",
-  async (id) => {
-    if (!IS_MOCK) await announcementsApi.togglePin(id);
-    return id;
+  async (id, { rejectWithValue }) => {
+    try {
+      // Real mode returns the updated announcement — trust its pinned value.
+      // Mock mode has no server, so signal a local flip with pinned undefined.
+      if (!IS_MOCK) {
+        const data = await announcementsApi.togglePin(id);
+        return { id, pinned: data.announcement?.pinned };
+      }
+      return { id, pinned: undefined };
+    } catch (err) {
+      return rejectWithValue(err.message || "Could not update pin");
+    }
   }
 );
 
@@ -112,8 +121,10 @@ const announcementsSlice = createSlice({
         state.items = state.items.filter((a) => String(a.id) !== String(action.payload));
       })
       .addCase(togglePinThunk.fulfilled, (state, action) => {
-        const a = state.items.find((x) => String(x.id) === String(action.payload));
-        if (a) a.pinned = !a.pinned;
+        const { id, pinned } = action.payload;
+        const a = state.items.find((x) => String(x.id) === String(id));
+        // Apply the server's authoritative value; mock mode (undefined) flips.
+        if (a) a.pinned = pinned === undefined ? !a.pinned : pinned;
       });
   },
 });

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
@@ -8,7 +8,7 @@ import {
 import { Card, Button, Badge, Progress, Input, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import {
-  selectDocuments, uploadDocument, deleteDocument,
+  selectDocuments, fetchDocuments, uploadDocument, deleteDocument,
 } from "@/store/slices/documentsSlice";
 import { useAuth } from "@/store/hooks";
 import { profileApi, IS_MOCK } from "@/api";
@@ -17,6 +17,18 @@ import { useTwoStep } from "@/context/TwoStepContext";
 import { cn, formatDate } from "@/lib/utils";
 
 const MAX_RESUMES = 4;
+
+// The standard document checklist every student should see, filled from the
+// DB when present (admin uploads via CSV), else shown as "Not uploaded".
+// Resume is excluded — resumes have their own section below.
+const DOC_CHECKLIST = [
+  { type: "tenth", name: "10th marksheet", required: true },
+  { type: "twelfth", name: "12th marksheet", required: true },
+  { type: "transcript", name: "College transcript", required: true },
+  { type: "id_card", name: "College ID card", required: true },
+  { type: "aadhaar", name: "Aadhaar card", required: true },
+  { type: "pan", name: "PAN card", required: false },
+];
 
 /**
  * DocumentsPage — student's document vault.
@@ -45,6 +57,23 @@ export default function DocumentsPage() {
   const { request: requestTwoStep } = useTwoStep();
   const [uploadingId, setUploadingId] = useState(null);
   const inputRefs = useRef({});
+
+  // Load the student's documents from the DB (real mode) on mount.
+  useEffect(() => {
+    if (!IS_MOCK) dispatch(fetchDocuments());
+  }, [dispatch]);
+
+  // Always show the standard checklist; fill each slot from the DB by `type`,
+  // so students see expected docs whether or not the admin has uploaded them.
+  const vaultDocs = useMemo(() => {
+    const byType = new Map(documents.map((d) => [d.type, d]));
+    return DOC_CHECKLIST.map((slot) => {
+      const found = byType.get(slot.type);
+      return found
+        ? { ...slot, ...found, status: found.status || "missing" }
+        : { id: slot.type, ...slot, status: "missing" };
+    });
+  }, [documents]);
 
   // ── Resumes (a small named set the student picks from when applying) ──
   const resumes = user?.resumes || [];
@@ -121,7 +150,7 @@ export default function DocumentsPage() {
   };
 
   // Completion: required docs that are verified or uploaded
-  const required = documents.filter((d) => d.required);
+  const required = vaultDocs.filter((d) => d.required);
   const completedRequired = required.filter((d) => d.status === "verified" || d.status === "uploaded").length;
   const completionPct = required.length > 0
     ? Math.round((completedRequired / required.length) * 100)
@@ -260,7 +289,7 @@ export default function DocumentsPage() {
 
         {/* Document grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger">
-          {documents.map((doc) => {
+          {vaultDocs.map((doc) => {
             const meta = STATUS_META[doc.status] || STATUS_META.missing;
             const StatusIcon = meta.icon;
             const isUploading = uploadingId === doc.id;

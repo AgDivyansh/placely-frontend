@@ -179,7 +179,13 @@ export default function AnnouncementsPage() {
                             variant="ghost"
                             size="iconSm"
                             aria-label={a.pinned ? "Unpin" : "Pin"}
-                            onClick={() => dispatch(togglePinThunk(a.id))}
+                            onClick={async () => {
+                              try {
+                                await dispatch(togglePinThunk(a.id)).unwrap();
+                              } catch (err) {
+                                toast.error("Couldn't update pin", err.message || "Please try again.");
+                              }
+                            }}
                           >
                             <Pin className={cn("h-4 w-4", a.pinned ? "text-accent" : "text-ink-3")} />
                           </Button>
