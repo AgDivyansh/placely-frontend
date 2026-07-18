@@ -3,16 +3,20 @@ import { useDispatch, useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import {
   FileText, Upload, Check, Clock, AlertCircle, Eye, Trash2,
-  Shield, Download, FileQuestion,
+  Shield, Download, FileQuestion, Plus, Star, Pencil,
 } from "lucide-react";
-import { Card, Button, Badge, Progress } from "@/components/ui";
+import { Card, Button, Badge, Progress, Input, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import {
   selectDocuments, uploadDocument, deleteDocument,
 } from "@/store/slices/documentsSlice";
+import { useAuth } from "@/store/hooks";
+import { profileApi, IS_MOCK } from "@/api";
 import { useToast } from "@/context/ToastContext";
 import { useTwoStep } from "@/context/TwoStepContext";
 import { cn, formatDate } from "@/lib/utils";
+
+const MAX_RESUMES = 4;
 
 /**
  * DocumentsPage — student's document vault.
@@ -36,10 +40,81 @@ const STATUS_META = {
 export default function DocumentsPage() {
   const dispatch = useDispatch();
   const documents = useSelector(selectDocuments);
+  const { user, updateUser } = useAuth();
   const toast = useToast();
   const { request: requestTwoStep } = useTwoStep();
   const [uploadingId, setUploadingId] = useState(null);
   const inputRefs = useRef({});
+
+  // ── Resumes (a small named set the student picks from when applying) ──
+  const resumes = user?.resumes || [];
+  const resumeInputRef = useRef(null);
+  const [renaming, setRenaming] = useState(null); // resume id or null
+  const [renameDraft, setRenameDraft] = useState("");
+
+  // Update Redux instantly; in real mode also PATCH so resumes exist
+  // server-side (the apply gate validates the chosen resume against these).
+  const persistResumes = async (next) => {
+    updateUser({ resumes: next });
+    if (!IS_MOCK) {
+      try {
+        await profileApi.update({ resumes: next });
+      } catch (err) {
+        toast.error("Couldn't save resume", err.message || "Please try again.");
+      }
+    }
+  };
+
+  const handleResumeFile = (file) => {
+    if (!file) return;
+    if (resumes.length >= MAX_RESUMES) {
+      toast.error("Limit reached", `You can store up to ${MAX_RESUMES} resumes.`);
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File too large", "Maximum 10 MB");
+      return;
+    }
+    const next = [
+      ...resumes,
+      {
+        id: `r${Date.now()}`,
+        name: file.name.replace(/\.[^.]+$/, ""),
+        filename: file.name,
+        isDefault: resumes.length === 0,
+      },
+    ];
+    persistResumes(next);
+    toast.success("Resume added", file.name);
+  };
+
+  const saveRename = () => {
+    const next = resumes.map((r) => (r.id === renaming ? { ...r, name: renameDraft.trim() || r.name } : r));
+    persistResumes(next);
+    setRenaming(null);
+  };
+
+  const setDefaultResume = (id) => {
+    persistResumes(resumes.map((r) => ({ ...r, isDefault: r.id === id })));
+  };
+
+  const removeResume = (resume) => {
+    requestTwoStep({
+      title: "Delete resume",
+      description: `Remove "${resume.name}". Applications already submitted keep the resume they used.`,
+      actionLabel: "Delete resume",
+      danger: true,
+      onConfirm: () => {
+        let next = resumes.filter((r) => r.id !== resume.id);
+        // Keep a default if one existed and we removed it.
+        if (resume.isDefault && next.length > 0 && !next.some((r) => r.isDefault)) {
+          next = next.map((r, i) => (i === 0 ? { ...r, isDefault: true } : r));
+        }
+        persistResumes(next);
+        toast.warning("Resume deleted", resume.name);
+      },
+    });
+  };
 
   // Completion: required docs that are verified or uploaded
   const required = documents.filter((d) => d.required);
@@ -115,6 +190,67 @@ export default function DocumentsPage() {
                 Missing required documents may block your application to top companies.
               </p>
             )}
+          </Card.Body>
+        </Card>
+
+        {/* Resumes — the set a student picks from when applying */}
+        <Card>
+          <Card.Header className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-ink">Resumes</h3>
+              <p className="text-xs text-ink-3 mt-0.5">
+                Store up to {MAX_RESUMES}. You choose one each time you apply.
+              </p>
+            </div>
+            <input
+              ref={resumeInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={(e) => handleResumeFile(e.target.files?.[0])}
+              className="hidden"
+            />
+            <Button
+              size="sm"
+              leftIcon={Plus}
+              disabled={resumes.length >= MAX_RESUMES}
+              onClick={() => resumeInputRef.current?.click()}
+            >
+              Add resume
+            </Button>
+          </Card.Header>
+          <Card.Body className="space-y-2">
+            {resumes.length === 0 && (
+              <p className="text-sm text-ink-3">
+                No resumes yet. Add at least one so you can apply to jobs.
+              </p>
+            )}
+            {resumes.map((r) => (
+              <div key={r.id} className="flex items-center gap-3 p-3 rounded-lg border border-border">
+                <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-accent" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-ink truncate">{r.name}</p>
+                    {r.isDefault && <Badge tone="accent" size="sm">Default</Badge>}
+                  </div>
+                  {r.filename && <p className="text-xs text-ink-3 truncate font-mono">{r.filename}</p>}
+                </div>
+                <div className="flex items-center gap-1">
+                  {!r.isDefault && (
+                    <Button variant="ghost" size="iconSm" aria-label="Set as default" onClick={() => setDefaultResume(r.id)}>
+                      <Star className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button variant="ghost" size="iconSm" aria-label="Rename" onClick={() => { setRenaming(r.id); setRenameDraft(r.name); }}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="iconSm" aria-label="Delete" onClick={() => removeResume(r)}>
+                    <Trash2 className="h-4 w-4 text-danger" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </Card.Body>
         </Card>
 
@@ -219,6 +355,26 @@ export default function DocumentsPage() {
             );
           })}
         </div>
+
+        <Modal
+          open={renaming !== null}
+          onClose={() => setRenaming(null)}
+          title="Rename resume"
+          footer={
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setRenaming(null)}>Cancel</Button>
+              <Button onClick={saveRename}>Save</Button>
+            </div>
+          }
+        >
+          <Input
+            label="Resume name"
+            value={renameDraft}
+            onChange={(e) => setRenameDraft(e.target.value)}
+            placeholder="e.g. Product roles, Backend-focused"
+            autoFocus
+          />
+        </Modal>
       </div>
     </PageTransition>
   );

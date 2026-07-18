@@ -31,6 +31,7 @@ const AdminJobsPage = lazy(() => import("@/pages/admin/AdminJobsPage"));
 const AdminApplicantsPage = lazy(() => import("@/pages/admin/AdminApplicantsPage"));
 const ActivityFeedPage = lazy(() => import("@/pages/admin/ActivityFeedPage"));
 const JobApplicantsPage = lazy(() => import("@/pages/admin/JobApplicantsPage"));
+const PublicProfilePage = lazy(() => import("@/pages/public/PublicProfilePage"));
 
 export function AppRouter() {
   return (
@@ -39,6 +40,9 @@ export function AppRouter() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+        {/* Public, unauthenticated shareable profile — outside the Shell */}
+        <Route path="/u/:slug" element={<PublicProfilePage />} />
 
         {/* Student routes — share the Shell layout */}
         <Route

@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -8,8 +8,11 @@ import {
 import { Button, Badge } from "@/components/ui";
 import { StatusStepper } from "./StatusStepper";
 import { EligibilityBadge } from "./EligibilityBadge";
+import { ResumePickerModal } from "./ResumePickerModal";
+import { useSelector } from "react-redux";
 import { useAuth } from "@/store/hooks";
 import { useAppData, useBookmarks } from "@/store/hooks";
+import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { useToast } from "@/context/ToastContext";
 import { checkEligibility } from "@/lib/eligibilityEngine";
 import { COMPANIES } from "@/data/mockData";
@@ -37,7 +40,9 @@ export const JobCard = memo(function JobCard({ job }) {
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const toast = useToast();
 
-  const company = job.company || COMPANIES.find((c) => c.id === job.companyId);
+  const companiesById = useSelector(selectCompaniesById);
+  // Prefer the company nested by the API, then the fetched slice, then mock.
+  const company = job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId);
   const eligibility = user ? checkEligibility(user, job) : null;
   const applied = hasAppliedTo(job.id);
   const bookmarked = isBookmarked(job.id);
@@ -55,11 +60,26 @@ export const JobCard = memo(function JobCard({ job }) {
     );
   };
 
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
+
   const handleApply = (e) => {
     e.stopPropagation();
     if (!eligibility?.eligible || applied) return;
-    apply(job);
-    toast.success("Applied!", `${job.role} at ${company?.name}`);
+    setPickerOpen(true);
+  };
+
+  const handleConfirmApply = async (resumeId) => {
+    setApplying(true);
+    try {
+      await apply(job, resumeId);
+      toast.success("Applied!", `${job.role} at ${company?.name}`);
+      setPickerOpen(false);
+    } catch (err) {
+      toast.error("Couldn't apply", err.message || "Please try again.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   // Halo gradient — varies by card state for visual feedback
@@ -236,6 +256,17 @@ export const JobCard = memo(function JobCard({ job }) {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* Clicks inside the modal must not bubble to the card's navigate onClick. */}
+      <div onClick={(e) => e.stopPropagation()}>
+        <ResumePickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onConfirm={handleConfirmApply}
+          jobLabel={`${job.role} at ${company?.name}`}
+          applying={applying}
+        />
       </div>
     </motion.div>
   );

@@ -7,9 +7,12 @@ import {
 } from "lucide-react";
 import { Card, Button, Badge, Tabs, Avatar } from "@/components/ui";
 import { StatusStepper } from "@/components/domain/StatusStepper";
+import { ResumePickerModal } from "@/components/domain/ResumePickerModal";
 import { PageTransition } from "@/components/feedback/PageTransition";
+import { useSelector } from "react-redux";
 import { useAuth } from "@/store/hooks";
 import { useAppData } from "@/store/hooks";
+import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { useToast } from "@/context/ToastContext";
 import { checkEligibility } from "@/lib/eligibilityEngine";
 import { COMPANIES, ALUMNI, INTERVIEW_EXPERIENCES } from "@/data/mockData";
@@ -28,6 +31,7 @@ export default function JobDetailPage() {
   const location = useLocation();
   const { user } = useAuth();
   const { jobs, hasAppliedTo, getApplicationFor, apply } = useAppData();
+  const companiesById = useSelector(selectCompaniesById);
   const toast = useToast();
   const [tab, setTab] = useState("overview");
 
@@ -47,17 +51,32 @@ export default function JobDetailPage() {
     );
   }
 
-  const company = job.company || COMPANIES.find((c) => c.id === job.companyId);
+  const company = job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId);
   const eligibility = checkEligibility(user, job);
   const application = getApplicationFor(job.id);
   const applied = !!application;
   const companyAlumni = ALUMNI.filter((a) => a.companyId === job.companyId);
   const experiences = INTERVIEW_EXPERIENCES[job.companyId] || [];
 
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
+
   const handleApply = () => {
     if (!eligibility.eligible) return;
-    apply(job);
-    toast.success("Application submitted", `${company?.name} · ${job.role}`);
+    setPickerOpen(true);
+  };
+
+  const handleConfirmApply = async (resumeId) => {
+    setApplying(true);
+    try {
+      await apply(job, resumeId);
+      toast.success("Application submitted", `${company?.name} · ${job.role}`);
+      setPickerOpen(false);
+    } catch (err) {
+      toast.error("Couldn't apply", err.message || "Please try again.");
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -278,6 +297,14 @@ export default function JobDetailPage() {
             </div>
           )}
         </motion.div>
+
+        <ResumePickerModal
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onConfirm={handleConfirmApply}
+          jobLabel={`${job.role} at ${company?.name}`}
+          applying={applying}
+        />
       </div>
     </PageTransition>
   );

@@ -107,6 +107,20 @@ export const DEMO_STUDENT = {
   avatar: null,
   resume: "divyansh_resume.pdf",
   skills: ["React", "Node.js", "Python", "DSA", "PostgreSQL"],
+  socialLinks: {
+    github: "https://github.com/divyansh",
+    linkedin: "https://linkedin.com/in/divyansh",
+    leetcode: "https://leetcode.com/u/divyansh",
+  },
+  projects: [
+    { title: "Placely", description: "Campus placement portal for Indian colleges.", url: "https://github.com/divyansh/placely", tech: ["React", "Node.js", "MongoDB"] },
+  ],
+  slug: "divyansh-sharma-a4f9",
+  isPublic: false,
+  resumes: [
+    { id: "r1", name: "Software roles", filename: "divyansh_swe.pdf", isDefault: true },
+    { id: "r2", name: "Product roles", filename: "divyansh_pm.pdf", isDefault: false },
+  ],
 };
 
 export const DEMO_ADMIN = {

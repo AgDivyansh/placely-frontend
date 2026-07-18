@@ -80,10 +80,10 @@ export const useAppData = () => {
   const user = useSelector(selectUser);
 
   const apply = useCallback(
-    async (job) => {
+    async (job, resumeId) => {
       if (IS_MOCK) {
         // Mock mode: optimistic local apply (instant, no server).
-        dispatch(applyToJob(job));
+        dispatch(applyToJob(job, resumeId));
         dispatch(
           logActivity({
             actor: user?.name || "Student",
@@ -95,7 +95,7 @@ export const useAppData = () => {
         return { ok: true };
       }
       // Real mode: POST to backend (runs eligibility check server-side).
-      const result = await dispatch(applyToJobThunk(job));
+      const result = await dispatch(applyToJobThunk({ job, resumeId }));
       if (applyToJobThunk.rejected.match(result)) {
         // Surface the server's reason (not eligible, already applied, etc.)
         throw new Error(result.payload || "Could not apply");

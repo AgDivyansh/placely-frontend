@@ -106,7 +106,7 @@ export async function mockRequest(method, path, opts = {}) {
   // ---- APPLICATIONS ----
   if (path === "/applications" && method === "GET") return { applications: db.applications };
   if (path === "/applications" && method === "POST") {
-    const { jobId } = opts.body || {};
+    const { jobId, resumeId } = opts.body || {};
     const job = db.jobs.find((j) => j.id === jobId);
     if (!job) throw new Error("Job not found");
     if (db.applications.some((a) => a.jobId === jobId)) {
@@ -118,6 +118,7 @@ export async function mockRequest(method, path, opts = {}) {
       companyId: job.companyId,
       currentStage: "applied",
       appliedAt: new Date().toISOString().slice(0, 10),
+      selectedResumeId: resumeId,
     };
     db.applications.push(application);
     return { application };
@@ -142,6 +143,27 @@ export async function mockRequest(method, path, opts = {}) {
   if (path === "/notifications/read-all") {
     db.notifications = db.notifications.map((n) => ({ ...n, read: true }));
     return { ok: true };
+  }
+
+  // ---- PUBLIC PROFILE (PII-safe subset, mirrors the real shaper) ----
+  const publicProfileMatch = path.match(/^\/public-profile\/([^/]+)$/);
+  if (publicProfileMatch && method === "GET") {
+    const s = DEMO_STUDENT;
+    if (publicProfileMatch[1] !== s.slug) throw new Error("Profile not found");
+    return {
+      profile: {
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+        branch: s.branch,
+        graduationYear: s.graduationYear,
+        isAlumni: s.isAlumni,
+        skills: s.skills,
+        resumeUrl: s.resume,
+        socialLinks: s.socialLinks,
+        projects: s.projects,
+      },
+    };
   }
 
   // ---- ANALYTICS (static demo payload) ----

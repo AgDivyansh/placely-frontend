@@ -20,9 +20,9 @@ export const fetchApplications = createAsyncThunk("applications/fetch", async ()
  */
 export const applyToJobThunk = createAsyncThunk(
   "applications/apply",
-  async (job, { rejectWithValue }) => {
+  async ({ job, resumeId }, { rejectWithValue }) => {
     try {
-      const data = await applicationsApi.create(job.id);
+      const data = await applicationsApi.create(job.id, resumeId);
       return data.application;
     } catch (err) {
       return rejectWithValue(err.message || "Could not apply");
@@ -40,7 +40,7 @@ const applicationsSlice = createSlice({
         if (state.items.some((a) => a.jobId === action.payload.jobId)) return;
         state.items.push(action.payload);
       },
-      prepare(job) {
+      prepare(job, resumeId) {
         return {
           payload: {
             id: `ap${Date.now()}`,
@@ -48,6 +48,7 @@ const applicationsSlice = createSlice({
             companyId: job.companyId,
             currentStage: "applied",
             appliedAt: new Date().toISOString().slice(0, 10),
+            selectedResumeId: resumeId,
           },
         };
       },
