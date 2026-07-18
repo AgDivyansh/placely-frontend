@@ -8,42 +8,53 @@
  *   same source of truth.
  * - Runs in O(k) where k = number of criteria. Negligible.
  *
- * @param {Object} student - { cgpa, tenth, twelfth, branch, backlogs }
+ * Field-name note: the real backend returns academic percentages as
+ * `tenthPercent`/`twelfthPercent` (see auth.service toPublicUser), while the
+ * mock data uses `tenth`/`twelfth`. We read the API name first and fall back
+ * to the mock name so this stays a single source of truth in both modes and
+ * produces verdicts identical to the server engine (backend utils/eligibility).
+ *
+ * @param {Object} student - { cgpa, tenthPercent|tenth, twelfthPercent|twelfth, branch, backlogs }
  * @param {Object} job - { eligibility: { minCgpa, minTenth, minTwelfth, branches[], maxBacklogs } }
  * @returns {{ eligible, passed, total, checks, reasons }}
  */
 export function checkEligibility(student, job) {
   const eg = job.eligibility || {};
+  const tenth = student.tenthPercent ?? student.tenth ?? 0;
+  const twelfth = student.twelfthPercent ?? student.twelfth ?? 0;
+  const branches = eg.branches || [];
+  const maxBacklogs = eg.maxBacklogs ?? 99; // absent = unrestricted, matches backend schema default
   const checks = [
     {
       name: "CGPA",
-      required: `${eg.minCgpa}+`,
-      actual: student.cgpa?.toFixed(2),
+      required: `${eg.minCgpa ?? 0}+`,
+      actual: (student.cgpa ?? 0).toFixed(2),
       pass: (student.cgpa ?? 0) >= (eg.minCgpa ?? 0),
     },
     {
       name: "10th %",
-      required: `${eg.minTenth}%+`,
-      actual: `${student.tenth ?? 0}%`,
-      pass: (student.tenth ?? 0) >= (eg.minTenth ?? 0),
+      required: `${eg.minTenth ?? 0}%+`,
+      actual: `${tenth}%`,
+      pass: tenth >= (eg.minTenth ?? 0),
     },
     {
       name: "12th %",
-      required: `${eg.minTwelfth}%+`,
-      actual: `${student.twelfth ?? 0}%`,
-      pass: (student.twelfth ?? 0) >= (eg.minTwelfth ?? 0),
+      required: `${eg.minTwelfth ?? 0}%+`,
+      actual: `${twelfth}%`,
+      pass: twelfth >= (eg.minTwelfth ?? 0),
     },
     {
       name: "Branch",
-      required: (eg.branches || []).join(", "),
+      required: branches.join(", ") || "Any",
       actual: student.branch,
-      pass: (eg.branches || []).includes(student.branch),
+      // Empty list = open to all branches (matches backend).
+      pass: branches.length === 0 || branches.includes(student.branch),
     },
     {
       name: "Backlogs",
-      required: `≤ ${eg.maxBacklogs}`,
+      required: `≤ ${maxBacklogs}`,
       actual: String(student.backlogs ?? 0),
-      pass: (student.backlogs ?? 0) <= (eg.maxBacklogs ?? 0),
+      pass: (student.backlogs ?? 0) <= maxBacklogs,
     },
   ];
   const passed = checks.filter((c) => c.pass).length;
