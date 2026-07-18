@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -8,8 +8,10 @@ import { Card, Button, Badge, Input, Modal, Chip } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import {
-  selectAnnouncements, addAnnouncement, deleteAnnouncement, togglePin,
+  selectAnnouncements, fetchAnnouncements,
+  createAnnouncementThunk, removeAnnouncementThunk, togglePinThunk,
 } from "@/store/slices/announcementsSlice";
+import { IS_MOCK } from "@/api";
 import { useAuth } from "@/store/hooks";
 import { useToast } from "@/context/ToastContext";
 import { useTwoStep } from "@/context/TwoStepContext";
@@ -48,10 +50,12 @@ function timeAgo(iso) {
 export default function AnnouncementsPage() {
   const dispatch = useDispatch();
   const announcements = useSelector(selectAnnouncements);
-  const { role } = useAuth();
+  const { role, persona } = useAuth();
   const toast = useToast();
   const { request: requestTwoStep } = useTwoStep();
   const isAdmin = role === "admin";
+  // Alumni may post too (e.g. job openings); pin/delete stay admin-only.
+  const canPost = isAdmin || persona === "alumni";
 
   const [filter, setFilter] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
@@ -59,15 +63,25 @@ export default function AnnouncementsPage() {
 
   const filtered = filter ? announcements.filter((a) => a.category === filter) : announcements;
 
-  const handleCreate = () => {
+  // Load the college's board from the API on mount (real mode).
+  useEffect(() => {
+    if (!IS_MOCK) dispatch(fetchAnnouncements());
+  }, [dispatch]);
+
+  const handleCreate = async () => {
     if (!form.title.trim() || !form.body.trim()) {
       toast.error("Missing fields", "Title and body are required");
       return;
     }
-    dispatch(addAnnouncement({ ...form, author: "Placement Cell" }));
-    toast.success("Announcement posted", "Students can now see it");
-    setForm({ title: "", body: "", category: "general", pinned: false });
-    setShowCreate(false);
+    try {
+      // Non-admins can't pin; the backend enforces this too.
+      await dispatch(createAnnouncementThunk({ ...form, pinned: isAdmin ? form.pinned : false })).unwrap();
+      toast.success("Announcement posted", "Students can now see it");
+      setForm({ title: "", body: "", category: "general", pinned: false });
+      setShowCreate(false);
+    } catch (err) {
+      toast.error("Couldn't post", err.message || "Please try again.");
+    }
   };
 
   const handleDelete = (a) => {
@@ -76,9 +90,13 @@ export default function AnnouncementsPage() {
       description: `Remove "${a.title}"? Students will no longer see it.`,
       actionLabel: "Delete",
       danger: true,
-      onConfirm: () => {
-        dispatch(deleteAnnouncement(a.id));
-        toast.warning("Announcement deleted", a.title);
+      onConfirm: async () => {
+        try {
+          await dispatch(removeAnnouncementThunk(a.id)).unwrap();
+          toast.warning("Announcement deleted", a.title);
+        } catch (err) {
+          toast.error("Couldn't delete", err.message || "Please try again.");
+        }
       },
     });
   };
@@ -93,12 +111,12 @@ export default function AnnouncementsPage() {
               Announcements
             </h1>
             <p className="text-sm text-ink-2 mt-1">
-              {isAdmin
-                ? "Post notices and updates for all students."
+              {canPost
+                ? "Post notices and updates for students."
                 : "Latest notices from the placement cell."}
             </p>
           </div>
-          {isAdmin && (
+          {canPost && (
             <Button leftIcon={Plus} onClick={() => setShowCreate(true)}>
               New announcement
             </Button>
@@ -152,7 +170,7 @@ export default function AnnouncementsPage() {
                         </div>
                         <h3 className="font-semibold text-ink mt-2">{a.title}</h3>
                         <p className="text-sm text-ink-2 mt-1 leading-relaxed">{a.body}</p>
-                        <p className="text-xs text-ink-3 mt-2">— {a.author}</p>
+                        <p className="text-xs text-ink-3 mt-2">— {a.authorName || a.author}</p>
                       </div>
 
                       {isAdmin && (
@@ -161,7 +179,7 @@ export default function AnnouncementsPage() {
                             variant="ghost"
                             size="iconSm"
                             aria-label={a.pinned ? "Unpin" : "Pin"}
-                            onClick={() => dispatch(togglePin(a.id))}
+                            onClick={() => dispatch(togglePinThunk(a.id))}
                           >
                             <Pin className={cn("h-4 w-4", a.pinned ? "text-accent" : "text-ink-3")} />
                           </Button>

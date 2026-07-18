@@ -40,8 +40,10 @@ export default function AdminJobsPage() {
     return j.role.toLowerCase().includes(q) || company?.name.toLowerCase().includes(q);
   });
 
-  const applicantCountFor = (jobId) =>
-    allApplicants.filter((a) => a.jobId === jobId).length;
+  // Prefer the server-computed count (jobs.list returns applicantCount per job
+  // in real mode); fall back to the local slice for mock mode.
+  const applicantCountFor = (job) =>
+    job.applicantCount ?? allApplicants.filter((a) => a.jobId === job.id).length;
 
   const handleCreate = async (job) => {
     try {
@@ -57,7 +59,7 @@ export default function AdminJobsPage() {
     const company = resolveCompany(job);
     requestTwoStep({
       title: "Delete job posting",
-      description: `This will permanently remove "${job.role}" at ${company?.name} and all ${applicantCountFor(job.id)} associated applications. This action cannot be undone.`,
+      description: `This will permanently remove "${job.role}" at ${company?.name} and all ${applicantCountFor(job)} associated applications. This action cannot be undone.`,
       actionLabel: "Delete posting",
       danger: true,
       onConfirm: async () => {
@@ -148,7 +150,7 @@ export default function AdminJobsPage() {
               <tbody>
                 {filtered.map((j) => {
                   const c = resolveCompany(j);
-                  const count = applicantCountFor(j.id);
+                  const count = applicantCountFor(j);
                   return (
                     <tr
                       key={j.id}

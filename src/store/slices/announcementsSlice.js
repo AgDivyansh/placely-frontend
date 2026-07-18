@@ -1,15 +1,60 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { announcementsApi, IS_MOCK } from "@/api";
 
 /**
  * Announcements slice — the notices board.
  *
- * Admins post announcements; students read them. Each has a category
- * and an optional "pinned" flag so important notices stay on top.
- *
- * API-ready: in production these come from GET /announcements. The
- * reducers below mirror what the backend endpoints will do so the
- * switch is a matter of replacing the seed + wiring thunks.
+ * Admins and alumni post; students read. In real mode this is backed by the
+ * API (fetch on login, create/pin/delete via thunks) so posts persist and are
+ * visible to the whole college. Mock mode keeps the local SEED + sync reducers.
  */
+export const fetchAnnouncements = createAsyncThunk("announcements/fetch", async () => {
+  const data = await announcementsApi.list();
+  return data.announcements || [];
+});
+
+export const createAnnouncementThunk = createAsyncThunk(
+  "announcements/create",
+  async (payload, { rejectWithValue }) => {
+    try {
+      if (IS_MOCK) {
+        return {
+          id: `an${Date.now()}`,
+          ...payload,
+          category: payload.category || "general",
+          pinned: !!payload.pinned,
+          authorName: payload.authorName || "Placement Cell",
+          createdAt: new Date().toISOString(),
+        };
+      }
+      const data = await announcementsApi.create(payload);
+      return data.announcement;
+    } catch (err) {
+      return rejectWithValue(err.message || "Could not post announcement");
+    }
+  }
+);
+
+export const removeAnnouncementThunk = createAsyncThunk(
+  "announcements/remove",
+  async (id, { rejectWithValue }) => {
+    try {
+      if (!IS_MOCK) await announcementsApi.remove(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.message || "Could not delete announcement");
+    }
+  }
+);
+
+export const togglePinThunk = createAsyncThunk(
+  "announcements/togglePin",
+  async (id) => {
+    if (!IS_MOCK) await announcementsApi.togglePin(id);
+    return id;
+  }
+);
+
 const SEED = [
   {
     id: "an1",
@@ -51,37 +96,27 @@ const SEED = [
 
 const announcementsSlice = createSlice({
   name: "announcements",
-  initialState: { items: SEED },
-  reducers: {
-    addAnnouncement: {
-      reducer(state, action) {
-        state.items.unshift(action.payload);
-      },
-      prepare({ title, body, category, pinned, author }) {
-        return {
-          payload: {
-            id: `an${Date.now()}`,
-            title,
-            body,
-            category: category || "general",
-            pinned: !!pinned,
-            author: author || "Placement Cell",
-            createdAt: new Date().toISOString(),
-          },
-        };
-      },
-    },
-    deleteAnnouncement(state, action) {
-      state.items = state.items.filter((a) => a.id !== action.payload);
-    },
-    togglePin(state, action) {
-      const a = state.items.find((x) => x.id === action.payload);
-      if (a) a.pinned = !a.pinned;
-    },
+  // Seed only in mock mode; real mode fetches the college's board on login.
+  initialState: { items: IS_MOCK ? SEED : [], status: "idle" },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchAnnouncements.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.items = action.payload;
+      })
+      .addCase(createAnnouncementThunk.fulfilled, (state, action) => {
+        if (action.payload) state.items.unshift(action.payload);
+      })
+      .addCase(removeAnnouncementThunk.fulfilled, (state, action) => {
+        state.items = state.items.filter((a) => String(a.id) !== String(action.payload));
+      })
+      .addCase(togglePinThunk.fulfilled, (state, action) => {
+        const a = state.items.find((x) => String(x.id) === String(action.payload));
+        if (a) a.pinned = !a.pinned;
+      });
   },
 });
-
-export const { addAnnouncement, deleteAnnouncement, togglePin } = announcementsSlice.actions;
 
 // Selector — pinned first, then newest first
 export const selectAnnouncements = (s) =>
