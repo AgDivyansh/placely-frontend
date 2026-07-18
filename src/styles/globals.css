@@ -1,0 +1,122 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-bg text-ink font-sans;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+  ::selection {
+    background-color: var(--accent-soft);
+    color: var(--ink);
+  }
+  *:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  /* Custom scrollbar (webkit) */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 8px;
+    border: 2px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+@layer components {
+  /* Mirror / glass effect — used in topbar, modals, special cards */
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* Subtle elevated card */
+  .surface-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 1px 2px rgba(11, 13, 23, 0.04), 0 1px 3px rgba(11, 13, 23, 0.06);
+    border-radius: 14px;
+  }
+  .surface-card-elev {
+    background: var(--surface-elev);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px -6px rgba(11, 13, 23, 0.08), 0 20px 40px -12px rgba(11, 13, 23, 0.10);
+    border-radius: 14px;
+  }
+
+  /* Display heading (Fraunces, italic, editorial) */
+  .display-heading {
+    @apply font-display italic font-medium leading-tight tracking-tight;
+  }
+
+  /* Numeric (JetBrains Mono for figures) */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  /* Subtle dot grid background (for hero sections) */
+  .dot-grid {
+    background-image: radial-gradient(circle, var(--border-strong) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  /* Stagger animation children — used on list mounts */
+  .stagger > * {
+    opacity: 0;
+    animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .stagger > *:nth-child(1) { animation-delay: 0.05s; }
+  .stagger > *:nth-child(2) { animation-delay: 0.10s; }
+  .stagger > *:nth-child(3) { animation-delay: 0.15s; }
+  .stagger > *:nth-child(4) { animation-delay: 0.20s; }
+  .stagger > *:nth-child(5) { animation-delay: 0.25s; }
+  .stagger > *:nth-child(6) { animation-delay: 0.30s; }
+  .stagger > *:nth-child(7) { animation-delay: 0.35s; }
+  .stagger > *:nth-child(8) { animation-delay: 0.40s; }
+
+  /* Skeleton shimmer */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--surface-tint) 0%,
+      var(--border) 50%,
+      var(--surface-tint) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 1.4s linear infinite;
+    border-radius: 8px;
+  }
+}
+
+/* ============================================================
+   KEYFRAMES (in addition to Tailwind config keyframes)
+   ============================================================ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}

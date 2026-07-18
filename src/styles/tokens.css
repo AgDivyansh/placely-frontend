@@ -1,0 +1,102 @@
+/* ============================================================
+   PLACELY DESIGN TOKENS
+   "Editorial Twilight" — warm cream / deep indigo / vivid coral
+   ============================================================
+   Engineering note: All themable values flow through CSS custom
+   properties. Switching themes = swapping the [data-theme] attr
+   on <html>. No component knows the actual color hex.
+   ============================================================ */
+
+[data-theme="light"] {
+  /* Surfaces */
+  --bg: #F5F1E8;
+  --surface: #FFFFFF;
+  --surface-elev: #FFFFFF;
+  --surface-tint: #FAF7EF;
+
+  /* Ink (text) */
+  --ink: #0B0D17;
+  --ink-2: #4A4D5C;
+  --ink-3: #8B8E9C;
+
+  /* Brand */
+  --accent: #FF6B47;
+  --accent-strong: #E54E2A;
+  --accent-soft: #FFE3DA;
+  --accent-shadow: rgba(255, 107, 71, 0.22);
+
+  /* Semantic */
+  --success: #2D8B6B;
+  --success-soft: #DCEFE5;
+  --warning: #C97A1F;
+  --warning-soft: #FCEDD3;
+  --danger: #C8412D;
+  --danger-soft: #FCE0DA;
+  --info: #2C5BB8;
+  --info-soft: #DBE5F8;
+
+  /* Borders */
+  --border: rgba(11, 13, 23, 0.08);
+  --border-strong: rgba(11, 13, 23, 0.14);
+
+  /* Glass / mirror */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px rgba(11, 13, 23, 0.08);
+
+  /* Stat-card accent shadows (for "lifted" feel) */
+  --tint-blue: rgba(44, 91, 184, 0.10);
+  --tint-coral: rgba(255, 107, 71, 0.10);
+  --tint-sage: rgba(45, 139, 107, 0.10);
+  --tint-amber: rgba(201, 122, 31, 0.10);
+
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #0B0D17;
+  --surface: #14171F;
+  --surface-elev: #1B1F2A;
+  --surface-tint: #1F232E;
+
+  --ink: #F5F1E8;
+  --ink-2: #B0B4C5;
+  --ink-3: #6B6F80;
+
+  --accent: #FF7E5C;
+  --accent-strong: #FF9374;
+  --accent-soft: #2D1A14;
+  --accent-shadow: rgba(255, 126, 92, 0.32);
+
+  --success: #4FBD96;
+  --success-soft: #16302A;
+  --warning: #E8B255;
+  --warning-soft: #3A2C12;
+  --danger: #E8695A;
+  --danger-soft: #3B1F1B;
+  --info: #5B85E0;
+  --info-soft: #1A2542;
+
+  --border: rgba(245, 241, 232, 0.08);
+  --border-strong: rgba(245, 241, 232, 0.16);
+
+  --glass-bg: rgba(20, 23, 31, 0.72);
+  --glass-border: rgba(245, 241, 232, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+
+  --tint-blue: rgba(91, 133, 224, 0.16);
+  --tint-coral: rgba(255, 126, 92, 0.16);
+  --tint-sage: rgba(79, 189, 150, 0.16);
+  --tint-amber: rgba(232, 178, 85, 0.16);
+
+  color-scheme: dark;
+}
+
+/* Reduced motion: kill all transitions/animations for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
