@@ -90,11 +90,14 @@ export const ALUMNI = [
 export const DEMO_STUDENT = {
   id: "u1",
   name: "Divyansh Sharma",
-  email: "divyansh@gmail.com",
+  email: "divyansh@gmail.com", // permanent personal email
+  collegeEmail: "21cs1234@svce.edu", // college email — verified badge
   phone: "+91 98765 43210",
   rollNo: "21CS1234",
   branch: "CSE",
   year: 4,
+  graduationYear: 2027, // future → still a current student, not yet alumni
+  isAlumni: false,
   cgpa: 8.2,
   tenth: 89,
   twelfth: 84,

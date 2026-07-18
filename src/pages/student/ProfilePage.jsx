@@ -24,13 +24,29 @@ export default function ProfilePage() {
 
   if (!user) return null;
 
+  // API returns tenthPercent/twelfthPercent/collegeRollId; mock uses tenth/twelfth/rollNo.
+  // Read the API name first, fall back to the mock name so both modes render.
+  const tenth = user.tenthPercent ?? user.tenth;
+  const twelfth = user.twelfthPercent ?? user.twelfth;
+  const isAlum = user.isAlumni ?? false;
+
+  // College email is issued by the college and read-only. Its badge flips to
+  // an "expired" state once the account has graduated into alumni status.
+  const collegeEmailBadge = user.collegeEmail
+    ? isAlum
+      ? { text: "Alumni · expired", tone: "warning" }
+      : { text: "Verified", tone: "success" }
+    : null;
+
   const fields = role === "student" ? [
-    { key: "email", icon: Mail, label: "Email", value: user.email, secure: true },
+    { key: "email", icon: Mail, label: "Personal email", value: user.email, secure: true },
+    { key: "collegeEmail", icon: Mail, label: "College email", value: user.collegeEmail || "Not linked", readOnly: true, badge: collegeEmailBadge },
     { key: "phone", icon: Phone, label: "Phone", value: user.phone, secure: true },
     { key: "branch", icon: BookOpen, label: "Branch", value: user.branch },
+    { key: "graduationYear", icon: GraduationCap, label: "Graduation year", value: user.graduationYear, readOnly: true },
     { key: "cgpa", icon: GraduationCap, label: "CGPA", value: user.cgpa },
-    { key: "tenth", icon: GraduationCap, label: "10th %", value: `${user.tenth}%` },
-    { key: "twelfth", icon: GraduationCap, label: "12th %", value: `${user.twelfth}%` },
+    { key: "tenth", icon: GraduationCap, label: "10th %", value: tenth != null ? `${tenth}%` : "—" },
+    { key: "twelfth", icon: GraduationCap, label: "12th %", value: twelfth != null ? `${twelfth}%` : "—" },
     { key: "resume", icon: FileText, label: "Resume", value: user.resume },
     { key: "city", icon: MapPin, label: "City", value: user.city },
   ] : [
@@ -86,12 +102,17 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-1.5">
                     <p className="text-xs text-ink-3">{f.label}</p>
                     {f.secure && <ShieldCheck className="h-3 w-3 text-info" />}
+                    {f.badge && <Badge tone={f.badge.tone} size="sm">{f.badge.text}</Badge>}
                   </div>
                   <p className="text-sm text-ink mt-0.5 truncate">{f.value}</p>
                 </div>
-                <Button variant="ghost" size="sm" leftIcon={Pencil} onClick={() => startEdit(f.key, f.value)}>
-                  Edit
-                </Button>
+                {f.readOnly ? (
+                  <span className="text-xs text-ink-3 pr-2">Read-only</span>
+                ) : (
+                  <Button variant="ghost" size="sm" leftIcon={Pencil} onClick={() => startEdit(f.key, f.value)}>
+                    Edit
+                  </Button>
+                )}
               </div>
             ))}
           </div>
