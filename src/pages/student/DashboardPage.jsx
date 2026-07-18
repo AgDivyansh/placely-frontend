@@ -78,7 +78,7 @@ export default function DashboardPage() {
             countTo={stats.applied}
             hint="Active applications"
             tone="blue"
-            onClick={() => navigate("/jobs?filter=applied")}
+            onClick={stats.applied > 0 ? () => navigate("/jobs?filter=applied") : undefined}
           />
           <StatCard
             icon={CheckCircle2}
@@ -86,7 +86,7 @@ export default function DashboardPage() {
             countTo={stats.eligible}
             hint="Ready to apply"
             tone="sage"
-            onClick={() => navigate("/jobs?filter=eligible")}
+            onClick={stats.eligible > 0 ? () => navigate("/jobs?filter=eligible") : undefined}
           />
           <StatCard
             icon={Calendar}
@@ -94,7 +94,7 @@ export default function DashboardPage() {
             countTo={stats.upcoming}
             hint="OAs and interviews"
             tone="coral"
-            onClick={() => navigate("/jobs?filter=upcoming")}
+            onClick={stats.upcoming > 0 ? () => navigate("/jobs?filter=applied") : undefined}
           />
         </div>
 

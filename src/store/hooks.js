@@ -124,12 +124,15 @@ export const useAppData = () => {
   const markAllNotificationsRead = useCallback(() => dispatch(markAllRead()), [dispatch]);
   const markNotificationRead = useCallback((id) => dispatch(markRead(id)), [dispatch]);
 
+  // Coerce both sides to strings: the backend jobId is an ObjectId that
+  // serializes to a string, and job.id is already a string — a strict ===
+  // would silently miss if the types ever differ, leaving the button stuck.
   const hasAppliedTo = useCallback(
-    (jobId) => applications.some((a) => a.jobId === jobId),
+    (jobId) => applications.some((a) => String(a.jobId) === String(jobId)),
     [applications]
   );
   const getApplicationFor = useCallback(
-    (jobId) => applications.find((a) => a.jobId === jobId) || null,
+    (jobId) => applications.find((a) => String(a.jobId) === String(jobId)) || null,
     [applications]
   );
 

@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
-  Pencil, ShieldCheck, Mail, Phone, GraduationCap, BookOpen, FileText, MapPin,
-  Upload, CheckCircle2, Github, Linkedin, Code, ChefHat, Zap, Shield, Globe,
+  Pencil, ShieldCheck, Mail, Phone, GraduationCap, BookOpen, MapPin,
+  Github, Linkedin, Code, ChefHat, Zap, Shield, Globe,
   Plus, Trash2, ExternalLink, Link2, Eye, EyeOff, Copy,
 } from "lucide-react";
 import { Card, Button, Avatar, Badge, Input, Modal } from "@/components/ui";
@@ -137,7 +137,6 @@ export default function ProfilePage() {
     { key: "cgpa", icon: GraduationCap, label: "CGPA", value: user.cgpa },
     { key: "tenth", icon: GraduationCap, label: "10th %", value: tenth != null ? `${tenth}%` : "—" },
     { key: "twelfth", icon: GraduationCap, label: "12th %", value: twelfth != null ? `${twelfth}%` : "—" },
-    { key: "resume", icon: FileText, label: "Resume", value: user.resume },
     { key: "city", icon: MapPin, label: "City", value: user.city },
   ] : [
     { key: "name", icon: Pencil, label: "Full name", value: user.name },
@@ -208,9 +207,6 @@ export default function ProfilePage() {
             ))}
           </div>
         </Card>
-
-        {/* Resume upload (student only) */}
-        {role === "student" && <ResumeUploadCard user={user} updateUser={updateUser} toast={toast} />}
 
         {role === "student" && (
           <>
@@ -355,110 +351,3 @@ export default function ProfilePage() {
   );
 }
 
-/**
- * ResumeUploadCard — drag/drop or click to upload, with parse animation.
- * Mocked: in production this calls POST /api/students/me/resume which
- * runs the PDF through a parser (Affinda, Sovren, or in-house LLM extractor)
- * and populates skills, experience, education.
- */
-function ResumeUploadCard({ user, updateUser, toast }) {
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [parsedSkills, setParsedSkills] = useState([]);
-  const inputRef = useRef(null);
-
-  const handleFile = (file) => {
-    if (!file) return;
-    if (!file.name.match(/\.(pdf|docx?)$/i)) {
-      toast.error("Unsupported file", "Please upload a PDF or Word document");
-      return;
-    }
-    setUploading(true);
-    setParsedSkills([]);
-    // Simulate upload + parse latency
-    setTimeout(() => {
-      updateUser({ resume: file.name });
-      // Pretend we extracted these from the PDF
-      const detected = ["React", "TypeScript", "Node.js", "PostgreSQL", "System Design"];
-      setParsedSkills(detected);
-      setUploading(false);
-      toast.success("Resume uploaded", `Extracted ${detected.length} skills automatically`);
-    }, 1400);
-  };
-
-  return (
-    <Card>
-      <Card.Header>
-        <h3 className="font-semibold text-ink">Resume</h3>
-        <p className="text-xs text-ink-3 mt-0.5">
-          PDF or DOCX. We auto-extract skills using an AI parser.
-        </p>
-      </Card.Header>
-      <Card.Body>
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            handleFile(e.dataTransfer.files?.[0]);
-          }}
-          onClick={() => inputRef.current?.click()}
-          className={`relative rounded-xl border-2 border-dashed transition-all cursor-pointer p-8 text-center ${
-            dragging ? "border-accent bg-accent/5" : "border-border hover:border-border-strong hover:bg-surface-tint"
-          }`}
-        >
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".pdf,.doc,.docx"
-            onChange={(e) => handleFile(e.target.files?.[0])}
-            className="hidden"
-          />
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 border border-accent/20 mb-3">
-            {uploading ? (
-              <svg className="animate-spin h-5 w-5 text-accent" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
-                <path d="M21 12a9 9 0 0 1-9 9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-              </svg>
-            ) : (
-              <Upload className="h-5 w-5 text-accent" />
-            )}
-          </div>
-          {uploading ? (
-            <p className="text-sm text-ink-2">Parsing your resume…</p>
-          ) : (
-            <>
-              <p className="text-sm font-medium text-ink">
-                {user.resume ? "Replace resume" : "Click to upload or drag and drop"}
-              </p>
-              <p className="text-xs text-ink-3 mt-1">PDF or Word, up to 10 MB</p>
-              {user.resume && (
-                <p className="mt-2 text-xs text-ink-2 flex items-center justify-center gap-1.5">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                  Current: <span className="font-mono">{user.resume}</span>
-                </p>
-              )}
-            </>
-          )}
-        </div>
-
-        {parsedSkills.length > 0 && (
-          <div className="mt-4 p-3 rounded-lg bg-success/5 border border-success/20">
-            <p className="text-xs font-semibold text-success uppercase tracking-widest">
-              ✓ Skills detected
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {parsedSkills.map((s) => (
-                <Badge key={s} tone="success" size="sm">{s}</Badge>
-              ))}
-            </div>
-          </div>
-        )}
-      </Card.Body>
-    </Card>
-  );
-}

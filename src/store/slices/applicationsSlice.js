@@ -69,7 +69,7 @@ const applicationsSlice = createSlice({
       })
       .addCase(applyToJobThunk.fulfilled, (state, action) => {
         // Avoid dupes; add the server-created application.
-        if (action.payload && !state.items.some((a) => a.jobId === action.payload.jobId)) {
+        if (action.payload && !state.items.some((a) => String(a.jobId) === String(action.payload.jobId))) {
           state.items.push(action.payload);
         }
       });
@@ -80,8 +80,8 @@ export const { applyToJob, advanceStage, withdraw } = applicationsSlice.actions;
 
 export const selectApplications = (s) => s.applications.items;
 export const selectHasAppliedTo = (jobId) => (s) =>
-  s.applications.items.some((a) => a.jobId === jobId);
+  s.applications.items.some((a) => String(a.jobId) === String(jobId));
 export const selectApplicationFor = (jobId) => (s) =>
-  s.applications.items.find((a) => a.jobId === jobId) || null;
+  s.applications.items.find((a) => String(a.jobId) === String(jobId)) || null;
 
 export default applicationsSlice.reducer;
