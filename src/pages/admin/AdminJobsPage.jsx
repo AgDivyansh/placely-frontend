@@ -10,6 +10,7 @@ import { useTwoStep } from "@/context/TwoStepContext";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { selectAllApplicants } from "@/store/slices/applicantsSlice";
+import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { logActivity } from "@/store/slices/activityFeedSlice";
 import { useAuth } from "@/store/hooks";
 import { COMPANIES } from "@/data/mockData";
@@ -24,13 +25,18 @@ export default function AdminJobsPage() {
   const { user } = useAuth();
   const dispatch = useDispatch();
   const allApplicants = useSelector(selectAllApplicants);
+  const companiesById = useSelector(selectCompaniesById);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
+
+  // Prefer the company nested by the API, then the fetched slice, then mock.
+  const resolveCompany = (job) =>
+    job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId);
 
   const filtered = jobs.filter((j) => {
     if (!search) return true;
     const q = search.toLowerCase();
-    const company = COMPANIES.find((c) => c.id === j.companyId);
+    const company = resolveCompany(j);
     return j.role.toLowerCase().includes(q) || company?.name.toLowerCase().includes(q);
   });
 
@@ -44,7 +50,7 @@ export default function AdminJobsPage() {
 
   // 2-step verification gate for deletion
   const handleRemove = (job) => {
-    const company = COMPANIES.find((c) => c.id === job.companyId);
+    const company = resolveCompany(job);
     requestTwoStep({
       title: "Delete job posting",
       description: `This will permanently remove "${job.role}" at ${company?.name} and all ${applicantCountFor(job.id)} associated applications. This action cannot be undone.`,
@@ -77,7 +83,7 @@ export default function AdminJobsPage() {
               leftIcon={Download}
               onClick={() => {
                 const rows = jobs.map((j) => {
-                  const c = COMPANIES.find((co) => co.id === j.companyId);
+                  const c = resolveCompany(j);
                   return {
                     company: c?.name,
                     role: j.role,
@@ -133,7 +139,7 @@ export default function AdminJobsPage() {
               </thead>
               <tbody>
                 {filtered.map((j) => {
-                  const c = COMPANIES.find((co) => co.id === j.companyId);
+                  const c = resolveCompany(j);
                   const count = applicantCountFor(j.id);
                   return (
                     <tr

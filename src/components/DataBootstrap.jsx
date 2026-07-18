@@ -6,6 +6,7 @@ import { fetchJobs } from "@/store/slices/jobsSlice";
 import { fetchApplications } from "@/store/slices/applicationsSlice";
 import { fetchBookmarks } from "@/store/slices/bookmarksSlice";
 import { fetchNotifications } from "@/store/slices/notificationsSlice";
+import { fetchCompanies } from "@/store/slices/companiesSlice";
 
 /**
  * DataBootstrap — loads the core data sets from the backend once the user
@@ -27,8 +28,9 @@ export function DataBootstrap() {
   useEffect(() => {
     if (IS_MOCK || !isAuthenticated) return;
 
-    // Everyone gets jobs.
+    // Everyone gets jobs + companies (company names are shown on job cards).
     dispatch(fetchJobs());
+    dispatch(fetchCompanies());
 
     // Student-specific data.
     if (role === "student") {

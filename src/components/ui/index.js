@@ -5,5 +5,6 @@ export { Input } from "./Input";
 export { Modal } from "./Modal";
 export { Avatar } from "./Avatar";
 export { Chip } from "./Chip";
+export { Combobox } from "./Combobox";
 export { Progress } from "./Progress";
 export { Tabs } from "./Tabs";

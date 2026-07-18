@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
-import { Modal, Button, Input, Chip, Badge } from "@/components/ui";
-import { COMPANIES } from "@/data/mockData";
+import { Check, Plus } from "lucide-react";
+import { Modal, Button, Input, Chip, Combobox } from "@/components/ui";
+import { selectCompanies, createCompany } from "@/store/slices/companiesSlice";
+import { useToast } from "@/context/ToastContext";
 import { BRANCHES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -32,12 +34,30 @@ const blank = {
 };
 
 export function CreateJobModal({ open, onClose, onCreate }) {
+  const dispatch = useDispatch();
+  const toast = useToast();
+  const companies = useSelector(selectCompanies);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(blank);
+  const [addingCompany, setAddingCompany] = useState(false);
+  const [newCompany, setNewCompany] = useState({ name: "", industry: "" });
 
   const update = (patch) => setForm((f) => ({ ...f, ...patch }));
   const updateEligibility = (patch) =>
     setForm((f) => ({ ...f, eligibility: { ...f.eligibility, ...patch } }));
+
+  const handleCreateCompany = async () => {
+    if (!newCompany.name.trim() || !newCompany.industry.trim()) return;
+    const result = await dispatch(createCompany(newCompany));
+    if (createCompany.rejected.match(result)) {
+      toast.error("Couldn't add company", result.payload || "Try again.");
+      return;
+    }
+    update({ companyId: result.payload.id });
+    setNewCompany({ name: "", industry: "" });
+    setAddingCompany(false);
+    toast.success("Company added", result.payload.name);
+  };
 
   const canAdvance = useMemo(() => {
     if (step === 0) return form.companyId && form.role && form.package && form.location && form.deadline;
@@ -129,19 +149,44 @@ export function CreateJobModal({ open, onClose, onCreate }) {
       {/* Step 1: basic info */}
       {step === 0 && (
         <div className="space-y-3">
-          <label className="block">
-            <span className="block text-xs font-medium text-ink-2 mb-1.5">Company</span>
-            <select
-              value={form.companyId}
-              onChange={(e) => update({ companyId: e.target.value })}
-              className="w-full h-10 px-3 rounded-lg bg-surface border border-border focus:border-accent text-sm"
-            >
-              <option value="">Select a company…</option>
-              {COMPANIES.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </label>
+          <Combobox
+            label="Company"
+            placeholder="Select a company…"
+            value={form.companyId}
+            onChange={(v) => update({ companyId: v })}
+            options={companies.map((c) => ({ value: c.id, label: c.name }))}
+            footer={
+              <button
+                type="button"
+                onClick={() => setAddingCompany((v) => !v)}
+                className="w-full px-3 py-2.5 text-sm text-left text-accent hover:bg-surface-tint transition-colors flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" /> Add new company
+              </button>
+            }
+          />
+          {addingCompany && (
+            <div className="rounded-lg border border-border bg-surface-tint p-3 space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  placeholder="Company name"
+                  value={newCompany.name}
+                  onChange={(e) => setNewCompany((c) => ({ ...c, name: e.target.value }))}
+                />
+                <Input
+                  placeholder="Industry"
+                  value={newCompany.industry}
+                  onChange={(e) => setNewCompany((c) => ({ ...c, industry: e.target.value }))}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" size="sm" onClick={() => setAddingCompany(false)}>Cancel</Button>
+                <Button size="sm" onClick={handleCreateCompany} disabled={!newCompany.name.trim() || !newCompany.industry.trim()}>
+                  Add company
+                </Button>
+              </div>
+            </div>
+          )}
           <Input
             label="Role title"
             placeholder="e.g. Software Engineer"
@@ -159,6 +204,7 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             <Input
               label="Apply by"
               type="date"
+              min={new Date().toISOString().slice(0, 10)}
               value={form.deadline}
               onChange={(e) => update({ deadline: e.target.value })}
             />

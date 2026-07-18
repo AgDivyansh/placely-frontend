@@ -16,6 +16,7 @@ import settings from "./slices/settingsSlice";
 import applicants from "./slices/applicantsSlice";
 import documents from "./slices/documentsSlice";
 import announcements from "./slices/announcementsSlice";
+import companies from "./slices/companiesSlice";
 
 /**
  * Redux store with selective persistence.
@@ -34,7 +35,7 @@ import announcements from "./slices/announcementsSlice";
 const rootReducer = combineReducers({
   theme, auth, applications, jobs, notifications,
   bookmarks, activityFeed, settings, applicants, documents,
-  announcements,
+  announcements, companies,
 });
 
 const persistConfig = {

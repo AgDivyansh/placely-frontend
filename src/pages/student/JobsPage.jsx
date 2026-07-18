@@ -6,8 +6,10 @@ import { Input, Chip, Button } from "@/components/ui";
 import { JobCard } from "@/components/domain/JobCard";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import { EmptyState } from "@/components/feedback/EmptyState";
+import { useSelector } from "react-redux";
 import { useAuth } from "@/store/hooks";
 import { useAppData } from "@/store/hooks";
+import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { checkEligibility } from "@/lib/eligibilityEngine";
 import { useDebounce } from "@/hooks/useDebounce";
 import { INDUSTRIES } from "@/lib/constants";
@@ -22,6 +24,7 @@ const SORTS = [
 export default function JobsPage() {
   const { user } = useAuth();
   const { jobs, hasAppliedTo } = useAppData();
+  const companiesById = useSelector(selectCompaniesById);
   const [searchParams, setSearchParams] = useSearchParams();
   const filterParam = searchParams.get("filter"); // applied | eligible | upcoming
 
@@ -56,7 +59,7 @@ export default function JobsPage() {
   const visibleJobs = useMemo(() => {
     let list = jobs.map((j) => ({
       job: j,
-      company: j.company || COMPANIES.find((c) => c.id === j.companyId),
+      company: j.company || companiesById[j.companyId] || COMPANIES.find((c) => c.id === j.companyId),
       eligibility: checkEligibility(user, j),
       applied: hasAppliedTo(j.id),
     }));
@@ -83,7 +86,7 @@ export default function JobsPage() {
       list.sort((a, b) => new Date(b.job.deadline) - new Date(a.job.deadline));
     }
     return list;
-  }, [jobs, user, debouncedSearch, industries, eligibleOnly, appliedOnly, sortBy, hasAppliedTo]);
+  }, [jobs, user, companiesById, debouncedSearch, industries, eligibleOnly, appliedOnly, sortBy, hasAppliedTo]);
 
   const activeFilters =
     (industries.length > 0 ? 1 : 0) +

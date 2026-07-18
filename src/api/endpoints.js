@@ -36,6 +36,7 @@ export const ENDPOINTS = {
   companies: {
     list: "/companies",
     detail: (id) => `/companies/${id}`,
+    create: "/companies", // POST (admin)
   },
 
   // ---- Applications (student's own) ----
@@ -48,10 +49,12 @@ export const ENDPOINTS = {
   // ---- Applicants (admin view — who applied to a job) ----
   applicants: {
     byJob: (jobId) => `/applicants/job/${jobId}`, // GET
+    byCompany: (companyId) => `/applicants/company/${companyId}`, // GET
     updateStage: (id) => `/applicants/${id}/stage`, // PATCH — move stage
     revoke: (id) => `/applicants/${id}`, // DELETE (2FA)
     bulkAdvance: "/applicants/bulk-advance", // PATCH
     bulkRevoke: "/applicants/bulk-revoke", // POST (2FA)
+    importStatus: "/applicants/import-status", // POST — CSV rollId→stage
   },
 
   // ---- Alumni ----
@@ -96,8 +99,13 @@ export const ENDPOINTS = {
   // ---- Profile ----
   profile: {
     get: "/profile",
-    update: "/profile", // PATCH
+    update: "/profile", // PATCH (also carries socialLinks, projects, isPublic)
     uploadResume: "/profile/resume", // POST (multipart)
+  },
+
+  // ---- Public profile (unauthenticated, PII-safe) ----
+  publicProfile: {
+    get: (slug) => `/public-profile/${slug}`, // GET ?collegeId=...
   },
 
   // ---- Analytics (admin dashboard) ----
@@ -109,6 +117,7 @@ export const ENDPOINTS = {
   students: {
     list: "/students",
     detail: (id) => `/students/${id}`,
+    import: "/students/import", // POST — bulk-create from CSV rows
   },
 
   // ---- Announcements (shared read, admin write) ----

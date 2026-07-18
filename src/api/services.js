@@ -63,20 +63,23 @@ export const jobsApi = {
 export const companiesApi = {
   list: async () => n(await api.get(E.companies.list)),
   detail: async (id) => n(await api.get(E.companies.detail(id))),
+  create: async (company) => n(await api.post(E.companies.create, company)),
 };
 
 export const applicationsApi = {
   list: async () => n(await api.get(E.applications.list)),
-  create: async (jobId) => n(await api.post(E.applications.create, { jobId })),
+  create: async (jobId, resumeId) => n(await api.post(E.applications.create, { jobId, resumeId })),
   withdraw: (id) => api.delete(E.applications.withdraw(id)),
 };
 
 export const applicantsApi = {
   byJob: async (jobId) => n(await api.get(E.applicants.byJob(jobId))),
+  byCompany: async (companyId) => n(await api.get(E.applicants.byCompany(companyId))),
   updateStage: (id, stage) => api.patch(E.applicants.updateStage(id), { stage }),
   revoke: (id) => api.delete(E.applicants.revoke(id)),
   bulkAdvance: (ids) => api.patch(E.applicants.bulkAdvance, { ids }),
   bulkRevoke: (ids) => api.post(E.applicants.bulkRevoke, { ids }),
+  importStatus: (jobId, rows) => api.post(E.applicants.importStatus, { jobId, rows }),
 };
 
 export const alumniApi = {
@@ -120,6 +123,10 @@ export const profileApi = {
   uploadResume: (formData) => api.post(E.profile.uploadResume, formData, { isMultipart: true }),
 };
 
+export const publicProfileApi = {
+  get: async (slug, collegeId) => n(await api.get(E.publicProfile.get(slug), { collegeId })),
+};
+
 export const analyticsApi = {
   overview: () => api.get(E.analytics.overview),
 };
@@ -127,6 +134,7 @@ export const analyticsApi = {
 export const studentsApi = {
   list: async () => n(await api.get(E.students.list)),
   detail: async (id) => n(await api.get(E.students.detail(id))),
+  import: (rows, defaultPassword) => api.post(E.students.import, { rows, defaultPassword }),
 };
 
 export const announcementsApi = {
