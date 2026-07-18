@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 import { useAuth } from "@/store/hooks";
 import { useAppData } from "@/store/hooks";
 import { selectCompaniesById } from "@/store/slices/companiesSlice";
-import { checkEligibility } from "@/lib/eligibilityEngine";
+import { resolveEligibility } from "@/lib/eligibilityEngine";
 import { useDebounce } from "@/hooks/useDebounce";
 import { INDUSTRIES } from "@/lib/constants";
 import { COMPANIES } from "@/data/mockData";
@@ -60,7 +60,7 @@ export default function JobsPage() {
     let list = jobs.map((j) => ({
       job: j,
       company: j.company || companiesById[j.companyId] || COMPANIES.find((c) => c.id === j.companyId),
-      eligibility: checkEligibility(user, j),
+      eligibility: resolveEligibility(user, j),
       applied: hasAppliedTo(j.id),
     }));
 

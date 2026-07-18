@@ -1,4 +1,4 @@
-import { checkEligibility } from "./eligibilityEngine";
+import { resolveEligibility } from "./eligibilityEngine";
 
 /**
  * Recommendations engine.
@@ -37,7 +37,7 @@ export function recommendJobs({ user, jobs, applications, companies, limit = 4 }
     .filter((j) => !appliedCompanyIds.has(j.companyId)) // exclude already-applied companies
     .map((j) => {
       const company = companies.find((c) => c.id === j.companyId);
-      const elig = checkEligibility(user, j);
+      const elig = resolveEligibility(user, j);
 
       let score = 0;
       // Eligibility weight

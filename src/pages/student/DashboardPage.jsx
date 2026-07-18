@@ -12,7 +12,7 @@ import { JobCard } from "@/components/domain/JobCard";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import { useAuth } from "@/store/hooks";
 import { useAppData } from "@/store/hooks";
-import { checkEligibility } from "@/lib/eligibilityEngine";
+import { resolveEligibility } from "@/lib/eligibilityEngine";
 import { recommendJobs } from "@/lib/recommendations";
 import { COMPANIES } from "@/data/mockData";
 import { formatLPA } from "@/lib/utils";
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
   // Derived counts — memoized
   const stats = useMemo(() => {
-    const eligibleJobs = jobs.filter((j) => checkEligibility(user, j).eligible);
+    const eligibleJobs = jobs.filter((j) => resolveEligibility(user, j).eligible);
     const upcoming = applications.filter((a) => ["oa", "tech", "hr"].includes(a.currentStage));
     return {
       applied: applications.length,

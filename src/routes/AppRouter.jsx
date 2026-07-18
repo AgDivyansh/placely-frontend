@@ -79,8 +79,6 @@ export function AppRouter() {
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/admin/jobs" element={<AdminJobsPage />} />
           <Route path="/admin/jobs/:id/applicants" element={<JobApplicantsPage />} />
-          {/* Merged into the People hub; keep a redirect for old links */}
-          <Route path="/admin/applicants" element={<Navigate to="/admin/students" replace />} />
           <Route path="/admin/students" element={<StudentDirectoryPage />} />
           <Route path="/admin/announcements" element={<AnnouncementsPage />} />
           <Route path="/admin/activity" element={<ActivityFeedPage />} />

@@ -36,7 +36,12 @@ const companiesSlice = createSlice({
         state.status = "failed";
       })
       .addCase(createCompany.fulfilled, (state, action) => {
-        if (action.payload) state.items.unshift(action.payload);
+        // Idempotent: never add a company already in the list (guards against
+        // a double dispatch or an already-fetched record reappearing).
+        const c = action.payload;
+        if (c && !state.items.some((x) => String(x.id) === String(c.id))) {
+          state.items.unshift(c);
+        }
       });
   },
 });

@@ -70,7 +70,11 @@ export function CreateJobModal({ open, onClose, onCreate }) {
   };
 
   const canAdvance = useMemo(() => {
-    if (step === 0) return form.companyId && form.role && form.package && form.location && form.deadline;
+    if (step === 0)
+      return (
+        form.companyId && form.role && form.package && form.location &&
+        form.deadline && form.description.trim()
+      );
     if (step === 1) return form.rounds.length >= 1;
     if (step === 2) return form.eligibility.branches.length > 0;
     return false;
@@ -103,6 +107,7 @@ export function CreateJobModal({ open, onClose, onCreate }) {
   };
 
   return (
+    <>
     <Modal
       open={open}
       onClose={reset}
@@ -168,43 +173,13 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             footer={
               <button
                 type="button"
-                onClick={() => setAddingCompany((v) => !v)}
+                onClick={() => setAddingCompany(true)}
                 className="w-full px-3 py-2.5 text-sm text-left text-accent hover:bg-surface-tint transition-colors flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" /> Add new company
               </button>
             }
           />
-          {addingCompany && (
-            <div className="rounded-lg border border-accent/30 bg-accent/5 p-3.5 space-y-3">
-              <div className="flex items-center gap-2">
-                <Plus className="h-4 w-4 text-accent" />
-                <p className="text-sm font-medium text-ink">New company</p>
-                <span className="text-xs text-ink-3">— it'll be selected automatically</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Input
-                  label="Company name"
-                  placeholder="e.g. Stripe"
-                  value={newCompany.name}
-                  onChange={(e) => setNewCompany((c) => ({ ...c, name: e.target.value }))}
-                  autoFocus
-                />
-                <Input
-                  label="Industry"
-                  placeholder="e.g. Fintech"
-                  value={newCompany.industry}
-                  onChange={(e) => setNewCompany((c) => ({ ...c, industry: e.target.value }))}
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setAddingCompany(false)}>Cancel</Button>
-                <Button size="sm" onClick={handleCreateCompany} disabled={!newCompany.name.trim() || !newCompany.industry.trim()}>
-                  Add & select
-                </Button>
-              </div>
-            </div>
-          )}
           <Input
             label="Role title"
             placeholder="e.g. Software Engineer"
@@ -236,7 +211,9 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             onChange={(e) => update({ location: e.target.value })}
           />
           <label className="block">
-            <span className="block text-xs font-medium text-ink-2 mb-1.5">Description</span>
+            <span className="block text-xs font-medium text-ink-2 mb-1.5">
+              Description <span className="text-danger">*</span>
+            </span>
             <textarea
               value={form.description}
               onChange={(e) => update({ description: e.target.value })}
@@ -371,5 +348,39 @@ export function CreateJobModal({ open, onClose, onCreate }) {
         </div>
       )}
     </Modal>
+
+    {/* Dedicated add-company modal — opens over the job form and auto-selects
+        the new company on success. */}
+    <Modal
+      open={addingCompany}
+      onClose={() => setAddingCompany(false)}
+      title="Add a new company"
+      description="It'll be selected for this posting automatically."
+      footer={
+        <div className="flex justify-end gap-2">
+          <Button variant="secondary" onClick={() => setAddingCompany(false)}>Cancel</Button>
+          <Button onClick={handleCreateCompany} disabled={!newCompany.name.trim() || !newCompany.industry.trim()}>
+            Add & select
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <Input
+          label="Company name"
+          placeholder="e.g. Stripe"
+          value={newCompany.name}
+          onChange={(e) => setNewCompany((c) => ({ ...c, name: e.target.value }))}
+          autoFocus
+        />
+        <Input
+          label="Industry"
+          placeholder="e.g. Fintech"
+          value={newCompany.industry}
+          onChange={(e) => setNewCompany((c) => ({ ...c, industry: e.target.value }))}
+        />
+      </div>
+    </Modal>
+    </>
   );
 }

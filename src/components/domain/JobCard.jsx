@@ -14,7 +14,7 @@ import { useAuth } from "@/store/hooks";
 import { useAppData, useBookmarks } from "@/store/hooks";
 import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { useToast } from "@/context/ToastContext";
-import { checkEligibility } from "@/lib/eligibilityEngine";
+import { resolveEligibility } from "@/lib/eligibilityEngine";
 import { COMPANIES } from "@/data/mockData";
 import { STAGES } from "@/lib/constants";
 import { formatLPA, cn } from "@/lib/utils";
@@ -43,7 +43,7 @@ export const JobCard = memo(function JobCard({ job }) {
   const companiesById = useSelector(selectCompaniesById);
   // Prefer the company nested by the API, then the fetched slice, then mock.
   const company = job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId);
-  const eligibility = user ? checkEligibility(user, job) : null;
+  const eligibility = user ? resolveEligibility(user, job) : null;
   const applied = hasAppliedTo(job.id);
   const bookmarked = isBookmarked(job.id);
   const application = getApplicationFor(job.id);

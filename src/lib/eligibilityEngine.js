@@ -66,3 +66,20 @@ export function checkEligibility(student, job) {
     reasons: checks.filter((c) => !c.pass).map((c) => c.name),
   };
 }
+
+/**
+ * resolveEligibility — pick the authoritative eligibility for a job.
+ *
+ * The real backend returns each job with `eligibility` already REPLACED by the
+ * server-computed result ({ eligible, passed, checks, reasons }); the raw
+ * criteria (minCgpa…) aren't in the payload. Recomputing here would read
+ * undefined thresholds and wrongly mark everyone eligible. So when that
+ * computed result is present (it has `.checks`), trust it; otherwise (mock
+ * mode, where `eligibility` holds the criteria) compute locally.
+ */
+export function resolveEligibility(student, job) {
+  if (job?.eligibility && Array.isArray(job.eligibility.checks)) {
+    return job.eligibility;
+  }
+  return checkEligibility(student, job);
+}

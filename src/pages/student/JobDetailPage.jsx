@@ -14,7 +14,7 @@ import { useAuth } from "@/store/hooks";
 import { useAppData } from "@/store/hooks";
 import { selectCompaniesById } from "@/store/slices/companiesSlice";
 import { useToast } from "@/context/ToastContext";
-import { checkEligibility } from "@/lib/eligibilityEngine";
+import { resolveEligibility } from "@/lib/eligibilityEngine";
 import { COMPANIES, ALUMNI, INTERVIEW_EXPERIENCES } from "@/data/mockData";
 import { formatLPA, cn } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ export default function JobDetailPage() {
   }
 
   const company = job.company || companiesById[job.companyId] || COMPANIES.find((c) => c.id === job.companyId);
-  const eligibility = checkEligibility(user, job);
+  const eligibility = resolveEligibility(user, job);
   const application = getApplicationFor(job.id);
   const applied = !!application;
   const companyAlumni = ALUMNI.filter((a) => a.companyId === job.companyId);

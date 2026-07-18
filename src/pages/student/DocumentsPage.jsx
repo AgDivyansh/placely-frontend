@@ -71,6 +71,10 @@ export default function DocumentsPage() {
       toast.error("Limit reached", `You can store up to ${MAX_RESUMES} resumes.`);
       return;
     }
+    if (resumes.some((r) => r.filename?.toLowerCase() === file.name.toLowerCase())) {
+      toast.error("Already added", `"${file.name}" is already in your resumes.`);
+      return;
+    }
     if (file.size > 10 * 1024 * 1024) {
       toast.error("File too large", "Maximum 10 MB");
       return;
