@@ -105,10 +105,9 @@ const applicantsSlice = createSlice({
       .addCase(fetchApplicantsByJob.fulfilled, (state, action) => {
         state.status = "succeeded";
         // Replace this job's applicants, keep any others already loaded.
-        const jobIds = new Set(action.payload.map((a) => a.jobId));
-        const incomingJob = action.payload[0]?.jobId;
+        const incomingJob = action.payload[0]?.jobId != null ? String(action.payload[0].jobId) : null;
         state.items = [
-          ...state.items.filter((a) => (incomingJob ? a.jobId !== incomingJob : true) && !jobIds.has(a.jobId)),
+          ...state.items.filter((a) => (incomingJob ? String(a.jobId) !== incomingJob : true)),
           ...action.payload,
         ];
       })
@@ -133,7 +132,7 @@ const applicantsSlice = createSlice({
 
 export const selectAllApplicants = (s) => s.applicants.items;
 export const selectApplicantsByJob = (jobId) => (s) =>
-  s.applicants.items.filter((a) => a.jobId === jobId);
+  s.applicants.items.filter((a) => String(a.jobId) === String(jobId));
 export const selectApplicantById = (id) => (s) =>
   s.applicants.items.find((a) => a.id === id) || null;
 export const selectApplicantsByStage = (stage) => (s) =>
