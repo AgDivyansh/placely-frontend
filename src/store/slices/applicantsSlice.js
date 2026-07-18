@@ -1,4 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { applicantsApi, IS_MOCK } from "@/api";
 
 /**
  * Applicants slice — students who applied to each job (admin view).
@@ -59,34 +60,76 @@ const seed = () => {
   return list;
 };
 
+// Load a job's real applicants from the backend (admin drill-down).
+export const fetchApplicantsByJob = createAsyncThunk(
+  "applicants/fetchByJob",
+  async (jobId) => {
+    const data = await applicantsApi.byJob(jobId);
+    return data.applicants || [];
+  }
+);
+
+// Mutations call the API in real mode, then apply the change locally so the
+// UI updates instantly. In mock mode they only touch local synthetic state.
+export const revokeApplicant = createAsyncThunk(
+  "applicants/revoke",
+  async (id) => {
+    if (!IS_MOCK) await applicantsApi.revoke(id);
+    return id;
+  }
+);
+
+export const bulkRevokeApplicants = createAsyncThunk(
+  "applicants/bulkRevoke",
+  async (ids) => {
+    if (!IS_MOCK) await applicantsApi.bulkRevoke(ids);
+    return ids;
+  }
+);
+
+export const bulkAdvanceApplicants = createAsyncThunk(
+  "applicants/bulkAdvance",
+  async (ids) => {
+    if (!IS_MOCK) await applicantsApi.bulkAdvance(ids);
+    return ids;
+  }
+);
+
 const applicantsSlice = createSlice({
   name: "applicants",
-  initialState: { items: seed() },
-  reducers: {
-    revokeApplication(state, action) {
-      state.items = state.items.filter((a) => a.id !== action.payload);
-    },
-    bulkRevoke(state, action) {
-      const ids = new Set(action.payload);
-      state.items = state.items.filter((a) => !ids.has(a.id));
-    },
-    advanceApplicantStage(state, action) {
-      const a = state.items.find((x) => x.id === action.payload.id);
-      if (a) a.currentStage = action.payload.stage;
-    },
-    bulkAdvance(state, action) {
-      const ids = new Set(action.payload.ids);
-      state.items.forEach((a) => {
-        if (ids.has(a.id)) {
-          const idx = STAGES.indexOf(a.currentStage);
-          if (idx < STAGES.length - 1) a.currentStage = STAGES[idx + 1];
-        }
+  // Only seed synthetic applicants in mock mode; real mode fetches per job.
+  initialState: { items: IS_MOCK ? seed() : [], status: "idle" },
+  reducers: {},
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchApplicantsByJob.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        // Replace this job's applicants, keep any others already loaded.
+        const jobIds = new Set(action.payload.map((a) => a.jobId));
+        const incomingJob = action.payload[0]?.jobId;
+        state.items = [
+          ...state.items.filter((a) => (incomingJob ? a.jobId !== incomingJob : true) && !jobIds.has(a.jobId)),
+          ...action.payload,
+        ];
+      })
+      .addCase(revokeApplicant.fulfilled, (state, action) => {
+        state.items = state.items.filter((a) => a.id !== action.payload);
+      })
+      .addCase(bulkRevokeApplicants.fulfilled, (state, action) => {
+        const ids = new Set(action.payload);
+        state.items = state.items.filter((a) => !ids.has(a.id));
+      })
+      .addCase(bulkAdvanceApplicants.fulfilled, (state, action) => {
+        const ids = new Set(action.payload);
+        state.items.forEach((a) => {
+          if (ids.has(a.id)) {
+            const idx = STAGES.indexOf(a.currentStage);
+            if (idx < STAGES.length - 1) a.currentStage = STAGES[idx + 1];
+          }
+        });
       });
-    },
   },
 });
-
-export const { revokeApplication, bulkRevoke, advanceApplicantStage, bulkAdvance } = applicantsSlice.actions;
 
 export const selectAllApplicants = (s) => s.applicants.items;
 export const selectApplicantsByJob = (jobId) => (s) =>

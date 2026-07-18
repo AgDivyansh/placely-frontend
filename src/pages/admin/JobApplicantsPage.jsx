@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,8 +13,10 @@ import { EmptyState } from "@/components/feedback/EmptyState";
 import { EmailComposerModal } from "@/components/admin/EmailComposerModal";
 import { CountUp } from "@/components/motion";
 import {
-  selectApplicantsByJob, revokeApplication, bulkRevoke, bulkAdvance,
+  selectApplicantsByJob, fetchApplicantsByJob,
+  revokeApplicant, bulkRevokeApplicants, bulkAdvanceApplicants,
 } from "@/store/slices/applicantsSlice";
+import { IS_MOCK } from "@/api";
 import { selectJobs } from "@/store/slices/jobsSlice";
 import { logActivity } from "@/store/slices/activityFeedSlice";
 import { useAuth } from "@/store/hooks";
@@ -42,6 +44,12 @@ export default function JobApplicantsPage() {
   const job = jobs.find((j) => j.id === id);
   const applicants = useSelector(selectApplicantsByJob(id));
   const company = job ? (job.company || COMPANIES.find((c) => c.id === job.companyId)) : null;
+
+  // Load real applicants for this job on mount (real mode only; mock mode
+  // already has synthetic applicants seeded in the slice).
+  useEffect(() => {
+    if (!IS_MOCK && id) dispatch(fetchApplicantsByJob(id));
+  }, [dispatch, id]);
 
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState(null);
@@ -82,15 +90,19 @@ export default function JobApplicantsPage() {
       description: `Permanently remove ${applicant.name}'s application from ${job.role}. The student will be notified by email.`,
       actionLabel: "Revoke application",
       danger: true,
-      onConfirm: () => {
-        dispatch(revokeApplication(applicant.id));
-        dispatch(logActivity({
-          actor: user?.name || "Admin",
-          action: "Revoked application of",
-          target: `${applicant.name} — ${job.role}`,
-          kind: "stage",
-        }));
-        toast.warning("Application revoked", `${applicant.name} removed from ${job.role}`);
+      onConfirm: async () => {
+        try {
+          await dispatch(revokeApplicant(applicant.id)).unwrap();
+          dispatch(logActivity({
+            actor: user?.name || "Admin",
+            action: "Revoked application of",
+            target: `${applicant.name} — ${job.role}`,
+            kind: "stage",
+          }));
+          toast.warning("Application revoked", `${applicant.name} removed from ${job.role}`);
+        } catch (err) {
+          toast.error("Couldn't revoke", err.message || "Please try again.");
+        }
       },
     });
   };
@@ -101,30 +113,38 @@ export default function JobApplicantsPage() {
       description: `This will permanently remove ${selected.length} student application${selected.length === 1 ? "" : "s"} from ${job.role}. Students will be notified by email.`,
       actionLabel: `Revoke ${selected.length}`,
       danger: true,
-      onConfirm: () => {
-        dispatch(bulkRevoke(selected));
-        dispatch(logActivity({
-          actor: user?.name || "Admin",
-          action: `Revoked ${selected.length} applications`,
-          target: job.role,
-          kind: "stage",
-        }));
-        toast.warning("Applications revoked", `${selected.length} students removed`);
-        setSelected([]);
+      onConfirm: async () => {
+        try {
+          await dispatch(bulkRevokeApplicants(selected)).unwrap();
+          dispatch(logActivity({
+            actor: user?.name || "Admin",
+            action: `Revoked ${selected.length} applications`,
+            target: job.role,
+            kind: "stage",
+          }));
+          toast.warning("Applications revoked", `${selected.length} students removed`);
+          setSelected([]);
+        } catch (err) {
+          toast.error("Couldn't revoke", err.message || "Please try again.");
+        }
       },
     });
   };
 
-  const handleBulkAdvance = () => {
-    dispatch(bulkAdvance({ ids: selected }));
-    dispatch(logActivity({
-      actor: user?.name || "Admin",
-      action: `Advanced ${selected.length} applicants`,
-      target: job.role,
-      kind: "stage",
-    }));
-    toast.success(`Advanced ${selected.length} applicants`, "Moved to next stage");
-    setSelected([]);
+  const handleBulkAdvance = async () => {
+    try {
+      await dispatch(bulkAdvanceApplicants(selected)).unwrap();
+      dispatch(logActivity({
+        actor: user?.name || "Admin",
+        action: `Advanced ${selected.length} applicants`,
+        target: job.role,
+        kind: "stage",
+      }));
+      toast.success(`Advanced ${selected.length} applicants`, "Moved to next stage");
+      setSelected([]);
+    } catch (err) {
+      toast.error("Couldn't advance", err.message || "Please try again.");
+    }
   };
 
   const handleExport = () => {
