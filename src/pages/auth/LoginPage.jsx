@@ -49,7 +49,8 @@ export default function LoginPage() {
         identifier,
         identifierType,
         password,
-        requestedRole: role,
+        // Alumni authenticate as students — status is computed server-side.
+        requestedRole: role === "admin" ? "admin" : "student",
       });
       toast.success("Welcome back", `Logged in as ${actualRole}.`);
       const from = location.state?.from?.pathname;
@@ -66,10 +67,10 @@ export default function LoginPage() {
   };
 
   const fillDemo = () => {
-    const creds = role === "admin" ? DEMO_CREDS.admin : DEMO_CREDS.student;
+    const creds = DEMO_CREDS[role] || DEMO_CREDS.student;
     setIdentifierType("email");
     setIdentifier(creds.email);
-    setPassword("placely2026");
+    setPassword(creds.password === "any-password" ? "placely2026" : creds.password);
   };
 
   return (
@@ -79,13 +80,20 @@ export default function LoginPage() {
           <h2 className="display-heading text-3xl text-ink">Welcome back</h2>
           <p className="text-sm text-ink-2 mt-1.5">Sign in to continue to Placely</p>
 
-          {/* Role toggle */}
+          {/* Role toggle. "alumni" is a UI convenience — they authenticate as
+              students (status is computed from graduationYear) and are routed
+              to the alumni home after login. */}
           <div className="mt-7 flex bg-surface-tint rounded-lg p-1">
-            {["student", "admin"].map((r) => (
+            {["student", "alumni", "admin"].map((r) => (
               <button
                 key={r}
                 type="button"
-                onClick={() => setRole(r)}
+                onClick={() => {
+                  setRole(r);
+                  setIdentifierType("email");
+                  setIdentifier("");
+                  setError("");
+                }}
                 className={cn(
                   "flex-1 h-9 rounded-md text-sm font-medium capitalize transition-all",
                   role === r ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink-2"
@@ -171,7 +179,7 @@ export default function LoginPage() {
             <p className="text-[11px] text-ink-3 uppercase tracking-widest font-semibold">Demo credentials</p>
             <div className="flex items-center justify-between mt-2">
               <p className="text-xs text-ink-2 font-mono">
-                {role === "admin" ? DEMO_CREDS.admin.email : DEMO_CREDS.student.email}
+                {(DEMO_CREDS[role] || DEMO_CREDS.student).email}
               </p>
               <Button variant="link" size="sm" onClick={fillDemo}>Fill</Button>
             </div>

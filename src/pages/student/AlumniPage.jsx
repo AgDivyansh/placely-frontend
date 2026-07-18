@@ -22,8 +22,10 @@ const MODES = [
 // Map the mock ALUMNI array to the same shape the real directory returns, so
 // the page renders identically in both modes.
 const mockDirectory = () =>
-  ALUMNI.map((a) => {
+  ALUMNI.map((a, i) => {
     const company = COMPANIES.find((c) => c.id === a.companyId);
+    // Alternate paid / free so mock mode shows both card types.
+    const paid = i % 2 === 0;
     return {
       id: a.id,
       name: a.name,
@@ -31,6 +33,9 @@ const mockDirectory = () =>
       graduationYear: a.gradYear,
       currentCompany: company?.name || "—",
       mentorBio: a.role,
+      mentorVerified: true,
+      mentorFee: paid ? 500 : undefined,
+      mentorPaymentLink: paid ? "https://example.com/pay" : undefined,
     };
   });
 

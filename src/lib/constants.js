@@ -29,5 +29,6 @@ export const INDUSTRIES = [
 /** Demo credentials — for the login screen hint */
 export const DEMO_CREDS = {
   student: { email: "divyansh@gmail.com", password: "any-password" },
+  alumni: { email: "alumni@placely.com", password: "placely2026" },
   admin: { email: "divyansh@admin.com", password: "any-password" },
 };

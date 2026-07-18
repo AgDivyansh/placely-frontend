@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowLeft, Send, Phone, Video, MessageCircle, ShieldCheck, Clock, Check,
+  ArrowLeft, Send, Phone, Video, ShieldCheck, Clock, Check,
 } from "lucide-react";
 import { Card, Button, Avatar, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
@@ -13,10 +13,11 @@ import { ALUMNI, COMPANIES } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 
 const QUICK_REPLIES = ["Hi! Can we talk about your role?", "Any tips for the interview?", "Referral help?"];
+// Text chat is free inline (the composer below); only calls need a request
+// that lands in the alumnus's inbox.
 const MODES = [
   { key: "video", label: "Video call", icon: Video },
   { key: "audio", label: "Audio call", icon: Phone },
-  { key: "chat", label: "Chat / async", icon: MessageCircle },
 ];
 
 export default function AlumniChatPage() {
@@ -112,7 +113,7 @@ export default function AlumniChatPage() {
               <p className="text-xs text-ink-2">{alumni.role} · {company?.name}</p>
             </div>
             <Button variant="secondary" size="sm" leftIcon={Phone} onClick={() => setShowReqModal(true)}>
-              Request a connect
+              Request a call
             </Button>
           </div>
 
@@ -201,8 +202,8 @@ export default function AlumniChatPage() {
         <Modal
           open={showReqModal}
           onClose={() => setShowReqModal(false)}
-          title="Request a connect"
-          description={`Ask ${alumni.name} for help. They'll accept and share a meeting link.`}
+          title="Request a call"
+          description={`Text is free above. For a call, ${alumni.name} will accept and share a meeting link.`}
           footer={
             <div className="flex justify-end gap-2">
               <Button variant="secondary" onClick={() => setShowReqModal(false)}>Cancel</Button>
