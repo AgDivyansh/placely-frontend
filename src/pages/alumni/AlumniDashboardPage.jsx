@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, Megaphone, Building2, MessageSquareQuote, ArrowRight } from "lucide-react";
+import { Megaphone, Building2, MessageSquareQuote, ArrowRight } from "lucide-react";
 import { Card, Button } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
 import { useAuth } from "@/store/hooks";
@@ -18,7 +18,6 @@ export default function AlumniDashboardPage() {
     { icon: MessageSquareQuote, label: "Mentor requests", desc: "Help students prep for interviews", to: "/mentor/requests" },
     { icon: Building2, label: "Companies", desc: "Browse companies your college works with", to: "/companies" },
     { icon: Megaphone, label: "Announcements", desc: "Post a job opening or update", to: "/announcements" },
-    { icon: Users, label: "Student directory", desc: "Reach students to offer help", to: "/companies", soon: true },
   ];
 
   return (

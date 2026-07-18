@@ -37,6 +37,7 @@ const ADMIN_NAV = [
 const ALUMNI_NAV = [
   { to: "/mentor", icon: LayoutDashboard, label: "Dashboard" },
   { to: "/mentor/requests", icon: MessageSquareQuote, label: "Mentor requests" },
+  { to: "/alumni", icon: GraduationCap, label: "Alumni Connect" },
   { to: "/companies", icon: Building2, label: "Companies" },
   { to: "/announcements", icon: Megaphone, label: "Announcements" },
   { to: "/profile", icon: User, label: "Profile" },

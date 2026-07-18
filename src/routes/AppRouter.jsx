@@ -60,6 +60,9 @@ export function AppRouter() {
           <Route path="/announcements" element={<AnnouncementsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          {/* Alumni Connect — students reach alumni; alumni reach each other */}
+          <Route path="/alumni" element={<AlumniPage />} />
+          <Route path="/alumni/:id" element={<AlumniChatPage />} />
         </Route>
 
         {/* Student-only routes */}
@@ -73,8 +76,6 @@ export function AppRouter() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/jobs" element={<JobsPage />} />
           <Route path="/jobs/:id" element={<JobDetailPage />} />
-          <Route path="/alumni" element={<AlumniPage />} />
-          <Route path="/alumni/:id" element={<AlumniChatPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/documents" element={<DocumentsPage />} />
