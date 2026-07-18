@@ -46,6 +46,16 @@ export function CreateJobModal({ open, onClose, onCreate }) {
   const updateEligibility = (patch) =>
     setForm((f) => ({ ...f, eligibility: { ...f.eligibility, ...patch } }));
 
+  // Clamp numeric input so paste/typing can't produce negative or out-of-range
+  // values (the native min/max only guard the spinner, not manual entry).
+  const clampNum = (raw, min, max) => {
+    if (raw === "") return "";
+    const n = Number(raw);
+    if (Number.isNaN(n)) return min;
+    return Math.min(max, Math.max(min, n));
+  };
+  const allBranchesSelected = form.eligibility.branches.length === BRANCHES.length;
+
   const handleCreateCompany = async () => {
     if (!newCompany.name.trim() || !newCompany.industry.trim()) return;
     const result = await dispatch(createCompany(newCompany));
@@ -166,15 +176,23 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             }
           />
           {addingCompany && (
-            <div className="rounded-lg border border-border bg-surface-tint p-3 space-y-2.5">
+            <div className="rounded-lg border border-accent/30 bg-accent/5 p-3.5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Plus className="h-4 w-4 text-accent" />
+                <p className="text-sm font-medium text-ink">New company</p>
+                <span className="text-xs text-ink-3">— it'll be selected automatically</span>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <Input
-                  placeholder="Company name"
+                  label="Company name"
+                  placeholder="e.g. Stripe"
                   value={newCompany.name}
                   onChange={(e) => setNewCompany((c) => ({ ...c, name: e.target.value }))}
+                  autoFocus
                 />
                 <Input
-                  placeholder="Industry"
+                  label="Industry"
+                  placeholder="e.g. Fintech"
                   value={newCompany.industry}
                   onChange={(e) => setNewCompany((c) => ({ ...c, industry: e.target.value }))}
                 />
@@ -182,7 +200,7 @@ export function CreateJobModal({ open, onClose, onCreate }) {
               <div className="flex justify-end gap-2">
                 <Button variant="secondary" size="sm" onClick={() => setAddingCompany(false)}>Cancel</Button>
                 <Button size="sm" onClick={handleCreateCompany} disabled={!newCompany.name.trim() || !newCompany.industry.trim()}>
-                  Add company
+                  Add & select
                 </Button>
               </div>
             </div>
@@ -197,9 +215,11 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             <Input
               label="Package (LPA)"
               type="number"
+              min={0}
+              step="0.5"
               placeholder="18"
               value={form.package}
-              onChange={(e) => update({ package: e.target.value })}
+              onChange={(e) => update({ package: clampNum(e.target.value, 0, 1000) })}
             />
             <Input
               label="Apply by"
@@ -283,31 +303,50 @@ export function CreateJobModal({ open, onClose, onCreate }) {
             <Input
               label="Min CGPA"
               type="number"
+              min={0}
+              max={10}
               step="0.1"
               value={form.eligibility.minCgpa}
-              onChange={(e) => updateEligibility({ minCgpa: Number(e.target.value) })}
+              onChange={(e) => updateEligibility({ minCgpa: clampNum(e.target.value, 0, 10) })}
             />
             <Input
               label="Max backlogs"
               type="number"
+              min={0}
+              max={99}
               value={form.eligibility.maxBacklogs}
-              onChange={(e) => updateEligibility({ maxBacklogs: Number(e.target.value) })}
+              onChange={(e) => updateEligibility({ maxBacklogs: clampNum(e.target.value, 0, 99) })}
             />
             <Input
               label="Min 10th %"
               type="number"
+              min={0}
+              max={100}
               value={form.eligibility.minTenth}
-              onChange={(e) => updateEligibility({ minTenth: Number(e.target.value) })}
+              onChange={(e) => updateEligibility({ minTenth: clampNum(e.target.value, 0, 100) })}
             />
             <Input
               label="Min 12th %"
               type="number"
+              min={0}
+              max={100}
               value={form.eligibility.minTwelfth}
-              onChange={(e) => updateEligibility({ minTwelfth: Number(e.target.value) })}
+              onChange={(e) => updateEligibility({ minTwelfth: clampNum(e.target.value, 0, 100) })}
             />
           </div>
           <div>
-            <span className="block text-xs font-medium text-ink-2 mb-2">Eligible branches</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="block text-xs font-medium text-ink-2">Eligible branches</span>
+              <button
+                type="button"
+                onClick={() =>
+                  updateEligibility({ branches: allBranchesSelected ? [] : [...BRANCHES] })
+                }
+                className="text-xs font-medium text-accent hover:text-accent-strong"
+              >
+                {allBranchesSelected ? "Clear all" : "Select all"}
+              </button>
+            </div>
             <div className="flex gap-2 flex-wrap">
               {BRANCHES.map((b) => (
                 <Chip
