@@ -41,7 +41,7 @@ export default function JobApplicantsPage() {
   const jobs = useSelector(selectJobs);
   const job = jobs.find((j) => j.id === id);
   const applicants = useSelector(selectApplicantsByJob(id));
-  const company = job ? COMPANIES.find((c) => c.id === job.companyId) : null;
+  const company = job ? (job.company || COMPANIES.find((c) => c.id === job.companyId)) : null;
 
   const [search, setSearch] = useState("");
   const [stageFilter, setStageFilter] = useState(null);

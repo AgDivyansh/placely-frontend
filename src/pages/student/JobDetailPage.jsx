@@ -47,7 +47,7 @@ export default function JobDetailPage() {
     );
   }
 
-  const company = COMPANIES.find((c) => c.id === job.companyId);
+  const company = job.company || COMPANIES.find((c) => c.id === job.companyId);
   const eligibility = checkEligibility(user, job);
   const application = getApplicationFor(job.id);
   const applied = !!application;

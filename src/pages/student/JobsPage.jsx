@@ -56,7 +56,7 @@ export default function JobsPage() {
   const visibleJobs = useMemo(() => {
     let list = jobs.map((j) => ({
       job: j,
-      company: COMPANIES.find((c) => c.id === j.companyId),
+      company: j.company || COMPANIES.find((c) => c.id === j.companyId),
       eligibility: checkEligibility(user, j),
       applied: hasAppliedTo(j.id),
     }));

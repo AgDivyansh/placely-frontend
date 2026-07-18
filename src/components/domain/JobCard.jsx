@@ -37,7 +37,7 @@ export const JobCard = memo(function JobCard({ job }) {
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const toast = useToast();
 
-  const company = COMPANIES.find((c) => c.id === job.companyId);
+  const company = job.company || COMPANIES.find((c) => c.id === job.companyId);
   const eligibility = user ? checkEligibility(user, job) : null;
   const applied = hasAppliedTo(job.id);
   const bookmarked = isBookmarked(job.id);

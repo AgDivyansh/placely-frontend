@@ -143,7 +143,7 @@ export default function DashboardPage() {
               ) : (
                 applications.map((app) => {
                   const job = jobs.find((j) => j.id === app.jobId);
-                  const company = COMPANIES.find((c) => c.id === app.companyId);
+                  const company = job?.company || COMPANIES.find((c) => c.id === (app.companyId || job?.companyId));
                   if (!job) return null;
                   return (
                     <Card
