@@ -29,8 +29,16 @@ export default function AlumniChatPage() {
   const backLabel = location.state?.fromLabel || "Back to alumni";
   const toast = useToast();
 
-  const alumni = ALUMNI.find((a) => a.id === id);
-  const company = COMPANIES.find((c) => c.id === alumni?.companyId);
+  // Prefer the alumnus passed via router state (real directory users have
+  // Mongo ids not in the mock ALUMNI array); fall back to the mock lookup.
+  const passed = location.state?.alumni;
+  const mockMatch = ALUMNI.find((a) => a.id === id);
+  const alumni = passed || mockMatch;
+  const company =
+    COMPANIES.find((c) => c.id === alumni?.companyId) ||
+    (alumni?.currentCompany ? { name: alumni.currentCompany, color: "var(--accent)" } : null);
+  const isVerified = alumni?.verified ?? alumni?.mentorVerified;
+  const roleLine = alumni?.role || alumni?.mentorBio;
 
   const [messages, setMessages] = useState([
     { id: 1, mine: false, body: `Hi! I'm ${alumni?.name?.split(" ")[0]}. Happy to help — what's on your mind?`, time: "10:24 AM" },
@@ -108,9 +116,9 @@ export default function AlumniChatPage() {
             <div className="flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="font-semibold text-ink">{alumni.name}</p>
-                {alumni.verified && <ShieldCheck className="h-3.5 w-3.5 text-info" />}
+                {isVerified && <ShieldCheck className="h-3.5 w-3.5 text-info" />}
               </div>
-              <p className="text-xs text-ink-2">{alumni.role} · {company?.name}</p>
+              <p className="text-xs text-ink-2">{[roleLine, company?.name].filter(Boolean).join(" · ")}</p>
             </div>
             <Button variant="secondary" size="sm" leftIcon={Phone} onClick={() => setShowReqModal(true)}>
               Request a call

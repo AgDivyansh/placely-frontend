@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Search, Building2, GraduationCap, Phone, Video, MessageCircle, MessageSquareQuote, ShieldCheck,
+  Search, Building2, GraduationCap, Phone, Video, MessageCircle, ShieldCheck,
 } from "lucide-react";
 import { Card, Input, Button, Badge, Avatar, Modal } from "@/components/ui";
 import { PageTransition } from "@/components/feedback/PageTransition";
@@ -13,10 +14,11 @@ import { connectApi, IS_MOCK } from "@/api";
 import { useToast } from "@/context/ToastContext";
 import { ALUMNI, COMPANIES } from "@/data/mockData";
 
+// Messaging is free (the "Message" button opens the chat directly). Only a
+// voice/video call needs a request that lands in the alumnus's inbox.
 const MODES = [
   { key: "video", label: "Video call", icon: Video },
   { key: "audio", label: "Audio call", icon: Phone },
-  { key: "chat", label: "Chat / async", icon: MessageCircle },
 ];
 
 // Map the mock ALUMNI array to the same shape the real directory returns, so
@@ -41,6 +43,7 @@ const mockDirectory = () =>
 
 export default function AlumniPage() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const toast = useToast();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search);
@@ -74,6 +77,12 @@ export default function AlumniPage() {
       (a) => a.name.toLowerCase().includes(q) || (a.currentCompany || "").toLowerCase().includes(q)
     );
   }, [alumni, debouncedSearch]);
+
+  // Free text chat — open the chat page, passing the alumnus so it renders
+  // even for real directory users (whose ids aren't in the mock ALUMNI array).
+  const startChat = (a) => {
+    navigate(`/alumni/${a.id}`, { state: { alumni: a, from: "/alumni", fromLabel: "Back to Alumni Connect" } });
+  };
 
   const openRequest = (a) => {
     setSelected(a);
@@ -159,9 +168,14 @@ export default function AlumniPage() {
                         Pay ₹{a.mentorFee} to book →
                       </a>
                     )}
-                    <Button variant="secondary" size="sm" leftIcon={MessageSquareQuote} onClick={() => openRequest(a)} className="w-full">
-                      Request a connect
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button variant="secondary" size="sm" leftIcon={MessageCircle} onClick={() => startChat(a)} className="flex-1">
+                        Message
+                      </Button>
+                      <Button variant="secondary" size="sm" leftIcon={Phone} onClick={() => openRequest(a)} className="flex-1">
+                        Request a call
+                      </Button>
+                    </div>
                   </Card.Body>
                 </Card>
               </motion.div>
@@ -173,8 +187,8 @@ export default function AlumniPage() {
       <Modal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title="Request a connect"
-        description={selected ? `Ask ${selected.name} for help. They'll accept and share a meeting link.` : ""}
+        title="Request a call"
+        description={selected ? `Messaging ${selected.name} is free. For a call, they'll accept and share a meeting link.` : ""}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="secondary" onClick={() => setSelected(null)}>Cancel</Button>
