@@ -13,7 +13,7 @@ import {
   selectApplications, selectHasAppliedTo, selectApplicationFor,
 } from "./slices/applicationsSlice";
 import {
-  addJob, removeJob, fetchJobs, selectJobs,
+  addJob, removeJob, fetchJobs, createJobThunk, removeJobThunk, selectJobs,
 } from "./slices/jobsSlice";
 import { IS_MOCK } from "@/api";
 import {
@@ -106,8 +106,11 @@ export const useAppData = () => {
   );
 
   const addJobMemo = useCallback(
-    (job) => {
-      dispatch(addJob(job));
+    async (job) => {
+      const result = await dispatch(createJobThunk(job));
+      if (createJobThunk.rejected.match(result)) {
+        throw new Error(result.payload || "Could not create job");
+      }
       dispatch(
         logActivity({
           actor: user?.name || "Admin",
@@ -116,11 +119,21 @@ export const useAppData = () => {
           kind: "job",
         })
       );
+      return result.payload;
     },
     [dispatch, user]
   );
 
-  const removeJobMemo = useCallback((id) => dispatch(removeJob(id)), [dispatch]);
+  const removeJobMemo = useCallback(
+    async (id) => {
+      const result = await dispatch(removeJobThunk(id));
+      if (removeJobThunk.rejected.match(result)) {
+        throw new Error(result.payload || "Could not delete job");
+      }
+      return result.payload;
+    },
+    [dispatch]
+  );
   const markAllNotificationsRead = useCallback(() => dispatch(markAllRead()), [dispatch]);
   const markNotificationRead = useCallback((id) => dispatch(markRead(id)), [dispatch]);
 

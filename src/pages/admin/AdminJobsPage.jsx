@@ -43,9 +43,13 @@ export default function AdminJobsPage() {
   const applicantCountFor = (jobId) =>
     allApplicants.filter((a) => a.jobId === jobId).length;
 
-  const handleCreate = (job) => {
-    addJob(job);
-    toast.success("Job published", `${job.role} is now live to students`);
+  const handleCreate = async (job) => {
+    try {
+      await addJob(job);
+      toast.success("Job published", `${job.role} is now live to students`);
+    } catch (err) {
+      toast.error("Couldn't publish job", err.message || "Please try again.");
+    }
   };
 
   // 2-step verification gate for deletion
@@ -56,15 +60,19 @@ export default function AdminJobsPage() {
       description: `This will permanently remove "${job.role}" at ${company?.name} and all ${applicantCountFor(job.id)} associated applications. This action cannot be undone.`,
       actionLabel: "Delete posting",
       danger: true,
-      onConfirm: () => {
-        removeJob(job.id);
-        dispatch(logActivity({
-          actor: user?.name || "Admin",
-          action: "Deleted job posting",
-          target: `${job.role} at ${company?.name}`,
-          kind: "job",
-        }));
-        toast.warning("Job removed", "Posting is no longer visible to students");
+      onConfirm: async () => {
+        try {
+          await removeJob(job.id);
+          dispatch(logActivity({
+            actor: user?.name || "Admin",
+            action: "Deleted job posting",
+            target: `${job.role} at ${company?.name}`,
+            kind: "job",
+          }));
+          toast.warning("Job removed", "Posting is no longer visible to students");
+        } catch (err) {
+          toast.error("Couldn't delete job", err.message || "Please try again.");
+        }
       },
     });
   };

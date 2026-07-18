@@ -12,6 +12,33 @@ export const fetchJobs = createAsyncThunk("jobs/fetch", async () => {
   return data.jobs || [];
 });
 
+// Persist a new job to the DB (real mode) so students actually see it and it
+// survives refresh. Mock mode keeps the local-only insert with a client id.
+export const createJobThunk = createAsyncThunk(
+  "jobs/create",
+  async (job, { rejectWithValue }) => {
+    try {
+      if (IS_MOCK) return { ...job, id: `j${Date.now()}` };
+      const data = await jobsApi.create(job);
+      return data.job;
+    } catch (err) {
+      return rejectWithValue(err.message || "Could not create job");
+    }
+  }
+);
+
+export const removeJobThunk = createAsyncThunk(
+  "jobs/remove",
+  async (id, { rejectWithValue }) => {
+    try {
+      if (!IS_MOCK) await jobsApi.remove(id);
+      return id;
+    } catch (err) {
+      return rejectWithValue(err.message || "Could not delete job");
+    }
+  }
+);
+
 const jobsSlice = createSlice({
   name: "jobs",
   initialState: { items: IS_MOCK ? JOBS : [], status: "idle" },
@@ -37,6 +64,12 @@ const jobsSlice = createSlice({
       })
       .addCase(fetchJobs.rejected, (state) => {
         state.status = "failed";
+      })
+      .addCase(createJobThunk.fulfilled, (state, action) => {
+        if (action.payload) state.items.unshift(action.payload);
+      })
+      .addCase(removeJobThunk.fulfilled, (state, action) => {
+        state.items = state.items.filter((j) => String(j.id) !== String(action.payload));
       });
   },
 });
