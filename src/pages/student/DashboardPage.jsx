@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Briefcase, CheckCircle2, Calendar, TrendingUp, ArrowRight,
-  Sparkles, ChevronRight, FileText,
+  Sparkles, Star, ChevronRight, FileText,
 } from "lucide-react";
 import { Card, Button, Badge, Progress } from "@/components/ui";
 import { StatCard } from "@/components/domain/StatCard";
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display italic text-2xl text-ink flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-accent" />
+                  <Star className="h-5 w-5 text-accent" />
                   Recommended for you
                 </h2>
                 <p className="text-xs text-ink-3 mt-0.5">

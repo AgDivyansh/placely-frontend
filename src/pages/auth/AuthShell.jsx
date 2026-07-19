@@ -42,8 +42,8 @@ export function AuthShell({ children }) {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="display-heading text-5xl leading-[1.05]"
             >
-              Placement,<br />
-              <em className="text-accent not-italic font-display italic">reimagined.</em>
+              Talent meets<br />
+              <em className="text-accent not-italic font-display italic">opportunity.</em>
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
