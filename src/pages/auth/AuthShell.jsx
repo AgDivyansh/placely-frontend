@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Sparkles, Users, TrendingUp } from "lucide-react";
+import { ListChecks, Users, TrendingUp } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { PageTransition } from "@/components/feedback/PageTransition";
@@ -62,7 +62,7 @@ export function AuthShell({ children }) {
               className="mt-12 space-y-4"
             >
               {[
-                { icon: Sparkles, label: "Eligibility engine", desc: "Real-time qualification check across all jobs" },
+                { icon: ListChecks, label: "Eligibility engine", desc: "Real-time qualification check across all jobs" },
                 { icon: Users, label: "Verified alumni", desc: "Mentor calls with seniors at top companies" },
                 { icon: TrendingUp, label: "Analytics", desc: "Live placement insights for TPOs" },
               ].map((f) => (
